@@ -1,0 +1,206 @@
+name: "Deploy getbao"
+description: "Build and deploy getbao auth service to Cloudflare Workers"
+author: "getbao"
+
+inputs:
+  environment:
+    description: "Deployment environment (dev or production)"
+    required: false
+    default: "dev"
+  api_token:
+    description: "Cloudflare API Token with Workers edit permissions"
+    required: true
+  account_id:
+    description: "Cloudflare Account ID"
+    required: true
+  app_secrets:
+    description: "JSON string of application secrets (e.g., from toJson(secrets))"
+    required: false
+    default: "{}"
+  force_rotate:
+    description: "Discard all existing BETTER_AUTH_SECRETS versions and regenerate from scratch (destructive — logs all users out)"
+    required: false
+    default: "false"
+  api_url:
+    description: "Base URL of the BAO API"
+    required: false
+    default: "https://api.getbao.dev"
+  license_key:
+    description: "getbao license key for downloading release assets"
+    required: true
+  github_token:
+    description: "GitHub API Token to submit Pull Request"
+    required: true
+
+outputs:
+  pr_url:
+    description: "URL of the pull request created for the OpenTofu state update (empty if no state changed)"
+    value: ${{ steps.create-pr.outputs.pull-request-url }}
+  deployment_url:
+    description: "URL of the deployed Cloudflare Worker"
+    value: ${{ steps.deploy.outputs.deployment-url }}
+
+runs:
+  using: "composite"
+  steps:
+    # ── Restore asset cache ────────────────────────────────────────────────
+    - name: Restore asset cache
+      id: asset-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/.bao-assets
+        key: bao-assets-${{ github.action_ref }}
+
+    # ── Download release assets (cache miss only) ──────────────────────────
+    - name: Download release assets
+      if: steps.asset-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: bash "${{ github.action_path }}/scripts/download-assets.sh"
+      env:
+        BAO_API_KEY: ${{ inputs.license_key }}
+        BAO_API_URL: ${{ inputs.api_url }}
+        VERSION: ${{ github.action_ref }}
+        ASSETS_DIR: ${{ github.workspace }}/.bao-assets
+
+    # ── Setup OpenTofu ─────────────────────────────────────────────────────
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_wrapper: false
+
+    # ── Ensure state directory exists ──────────────────────────────────────
+    - name: Prepare state directory
+      shell: bash
+      run: mkdir -p "$GITHUB_WORKSPACE/.bao"
+
+    # ── tofu init ──────────────────────────────────────────────────────────
+    - name: OpenTofu init
+      shell: bash
+      working-directory: ${{ github.workspace }}/.bao-assets/tf
+      run: tofu init -backend-config="path=$GITHUB_WORKSPACE/.bao/terraform-${{ inputs.environment }}.tfstate"
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.api_token }}
+
+    # ── tofu apply ─────────────────────────────────────────────────────────
+    - name: OpenTofu apply
+      shell: bash
+      working-directory: ${{ github.workspace }}/.bao-assets/tf
+      run: |
+        APP_NAME=$(node -e "process.stdout.write(require('$GITHUB_WORKSPACE/bao.config.json').appName ?? 'getbao')")
+        tofu apply -auto-approve \
+          -var="account_id=${{ inputs.account_id }}" \
+          -var="api_token=${{ inputs.api_token }}" \
+          -var="db_name=bao-db-${{ inputs.environment }}" \
+          -var="project_name=$APP_NAME" \
+          -var="kv_namespace_name=bao-config-${{ inputs.environment }}"
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.api_token }}
+
+    # ── Capture tofu outputs ───────────────────────────────────────────────
+    - name: Get OpenTofu outputs
+      id: tofu-outputs
+      shell: bash
+      working-directory: ${{ github.workspace }}/.bao-assets/tf
+      run: |
+        JSON=$(tofu output -json)
+        DB_ID=$(echo "$JSON"   | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).d1_database_id.value))")
+        DB_NAME=$(echo "$JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).d1_database_name.value))")
+        KV_ID=$(echo "$JSON"   | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).kv_namespace_id.value))")
+        echo "db_id=$DB_ID"     >> "$GITHUB_OUTPUT"
+        echo "db_name=$DB_NAME" >> "$GITHUB_OUTPUT"
+        echo "kv_id=$KV_ID"     >> "$GITHUB_OUTPUT"
+
+    # ── Commit state + open PR ─────────────────────────────────────────────
+    - name: Create pull request for state update
+      id: create-pr
+      uses: peter-evans/create-pull-request@v7
+      with:
+        token: ${{ inputs.github_token }}
+        add-paths: .bao/terraform-${{ inputs.environment }}.tfstate
+        commit-message: "chore: update OpenTofu state (${{ inputs.environment }}) [skip ci]"
+        branch: bao/update-state-${{ inputs.environment }}
+        delete-branch: true
+        title: "chore: update OpenTofu state (${{ inputs.environment }})"
+        body: |
+          Automated OpenTofu state update for **${{ inputs.environment }}** from the bao deploy action.
+
+          **App:** `${{ steps.gen-config.outputs.app_name }}`
+          **D1 database ID:** `${{ steps.tofu-outputs.outputs.db_id }}`
+
+    # ── Generate wrangler.json ─────────────────────────────────────────────
+    - name: Generate wrangler.json
+      id: gen-config
+      shell: bash
+      run: node "${{ github.action_path }}/dist/generate-config.js"
+      env:
+        DEPLOY_ENV: ${{ inputs.environment }}
+        TOFU_DB_ID: ${{ steps.tofu-outputs.outputs.db_id }}
+        TOFU_DB_NAME: ${{ steps.tofu-outputs.outputs.db_name }}
+        TOFU_KV_ID: ${{ steps.tofu-outputs.outputs.kv_id }}
+
+    # ── Parse App Secrets ──────────────────────────────────────────────────
+    - name: Parse app secrets
+      id: parse-secrets
+      shell: bash
+      run: node "${{ github.action_path }}/dist/parse-secrets.js"
+      env:
+        APP_SECRETS: ${{ inputs.app_secrets }}
+
+    # ---
+    - name: Install Cloudflare Wrangler
+      id: install-wrangler
+      shell: bash
+      run: pnpm add -g wrangler
+
+    # ── Apply D1 Migrations ───────────────────────────────────────────────
+    - name: Apply Database Migrations
+      if: ${{ steps.tofu-outputs.outputs.db_id != '' }}
+      shell: bash
+      run: |
+        if [ -d "$GITHUB_WORKSPACE/.bao-assets/migrations" ] && [ "$(ls -A $GITHUB_WORKSPACE/.bao-assets/migrations)" ]; then
+          echo "Running migrations against DB binding..."
+          npx wrangler d1 migrations apply DB --remote -c wrangler.json --env ${{ inputs.environment }}
+        else
+          echo "No migrations found, skipping."
+        fi
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.api_token }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
+
+    # ── Deploy Auth Worker ────────────────────────────────────────────────
+    - name: Deploy Auth Worker
+      id: deploy
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ inputs.api_token }}
+        accountId: ${{ inputs.account_id }}
+        workingDirectory: ${{ github.workspace }}
+        command: deploy -c wrangler.json --env ${{ inputs.environment }}
+        secrets: ${{ env.SECRET_KEYS }}
+
+    # ── Deploy Rotation Worker ────────────────────────────────────────────
+    - name: Deploy Rotation Worker
+      id: deploy-rotation
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ inputs.api_token }}
+        accountId: ${{ inputs.account_id }}
+        workingDirectory: ${{ github.workspace }}
+        command: deploy -c wrangler-rotation.json --env ${{ inputs.environment }}
+
+    # ── Bootstrap Secrets ────────────────────────────────────────────────
+    - name: Bootstrap Auth Secrets
+      id: bootstrap-secrets
+      shell: bash
+      run: node "${{ github.action_path }}/dist/bootstrap-secrets.js"
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
+        CLOUDFLARE_API_TOKEN: ${{ inputs.api_token }}
+        KV_NAMESPACE_ID: ${{ steps.tofu-outputs.outputs.kv_id }}
+        AUTH_WORKER_NAME: ${{ steps.gen-config.outputs.app_name }}-${{ inputs.environment }}
+        ROTATION_WORKER_NAME: ${{ steps.gen-config.outputs.rotation_worker_name }}-${{ inputs.environment }}
+        FORCE_ROTATE: ${{ inputs.force_rotate }}
+
+branding:
+  icon: "lock"
+  color: purple
