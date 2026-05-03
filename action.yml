@@ -25,6 +25,10 @@ inputs:
     description: "Base URL of the BAO API"
     required: false
     default: "https://api.getbao.dev"
+  version:
+    description: "getbao release version to deploy (e.g. v1.2.3). Defaults to 'latest' which resolves to the latest stable release."
+    required: false
+    default: "latest"
   license_key:
     description: "getbao license key for downloading release assets"
     required: true
@@ -49,7 +53,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.bao-assets
-        key: bao-assets-${{ github.action_ref }}
+        key: bao-assets-${{ inputs.version }}
 
     # ── Download release assets (cache miss only) ──────────────────────────
     - name: Download release assets
@@ -59,7 +63,7 @@ runs:
       env:
         BAO_API_KEY: ${{ inputs.license_key }}
         BAO_API_URL: ${{ inputs.api_url }}
-        VERSION: ${{ github.action_ref }}
+        VERSION: ${{ inputs.version }}
         ASSETS_DIR: ${{ github.workspace }}/.bao-assets
 
     # ── Setup OpenTofu ─────────────────────────────────────────────────────
