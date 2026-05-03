@@ -59,7 +59,7 @@ runs:
     - name: Download release assets
       if: steps.asset-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: bash "${{ github.action_path }}/scripts/download-assets.sh"
+      run: node "${{ github.action_path }}/dist/download-assets.js"
       env:
         BAO_API_KEY: ${{ inputs.license_key }}
         BAO_API_URL: ${{ inputs.api_url }}
