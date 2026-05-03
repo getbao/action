@@ -18,7 +18,7 @@ for asset in "${ASSETS[@]}"; do
 
   presigned=$(curl -fsSL \
     -H "Authorization: Bearer $BAO_API_KEY" \
-    "$BAO_API_URL/api/v1/releases/$VERSION/$asset" \
+    "$BAO_API_URL/v1/releases/$VERSION/$asset" \
     | jq -r '.url')
 
   curl -fsSL "$presigned" -o "$ASSETS_DIR/$asset"
