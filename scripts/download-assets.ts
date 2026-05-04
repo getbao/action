@@ -18,7 +18,6 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { configure, getLogger } from "@logtape/logtape";
 
 const ASSETS = [
@@ -137,7 +136,7 @@ export async function downloadAssets(env: NodeJS.ProcessEnv): Promise<void> {
 	logger.info("Assets extracted.");
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] === __filename) {
 	void (async () => {
 		await configure({
 			sinks: {

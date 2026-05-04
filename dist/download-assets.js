@@ -38,7 +38,6 @@ var import_node_child_process = require("node:child_process");
 var import_node_crypto = require("node:crypto");
 var import_promises = require("node:fs/promises");
 var import_node_path = require("node:path");
-var import_node_url = require("node:url");
 
 // ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/filter.js
 function toFilter(filter) {
@@ -1425,7 +1424,6 @@ var ConfigError = class extends Error {
 };
 
 // scripts/download-assets.ts
-var import_meta = {};
 var ASSETS = [
   "manifest.json",
   "worker.js",
@@ -1508,7 +1506,7 @@ async function downloadAssets(env) {
   }
   logger.info("Assets extracted.");
 }
-if (process.argv[1] === (0, import_node_url.fileURLToPath)(import_meta.url)) {
+if (process.argv[1] === __filename) {
   void (async () => {
     await configure({
       sinks: {
