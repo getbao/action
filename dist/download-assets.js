@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -26,14 +25,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// scripts/download-assets.ts
-var download_assets_exports = {};
-__export(download_assets_exports, {
-  downloadAssets: () => downloadAssets
-});
-module.exports = __toCommonJS(download_assets_exports);
+// src/download-assets.ts
 var import_node_child_process = require("node:child_process");
 var import_node_crypto = require("node:crypto");
 var import_promises = require("node:fs/promises");
@@ -1423,7 +1416,7 @@ var ConfigError = class extends Error {
   }
 };
 
-// scripts/download-assets.ts
+// src/download-assets.ts
 var ASSETS = [
   "manifest.json",
   "worker.js",
@@ -1506,28 +1499,26 @@ async function downloadAssets(env) {
   }
   logger.info("Assets extracted.");
 }
-if (process.argv[1] === __filename) {
-  void (async () => {
-    await configure({
-      sinks: {
-        stdout: (record) => {
-          const msg = record.message.map((v) => typeof v === "string" ? v : String(v)).join("");
-          process.stdout.write(`${msg}
-`);
-        }
-      },
-      loggers: [{ category: ["bao"], sinks: ["stdout"], lowestLevel: "info" }]
-    });
-    const logger = getLogger(["bao", "action", "download-assets"]);
-    try {
-      await downloadAssets(process.env);
-    } catch (err) {
-      logger.fatal("::error::{message}", { message: err.message });
-      process.exit(1);
-    }
-  })();
+
+// src/logger.ts
+async function setupLogger() {
+  await configure({
+    sinks: { console: getConsoleSink() },
+    loggers: [
+      { category: ["bao"], sinks: ["console"], lowestLevel: "info" },
+      { category: ["logtape", "meta"], sinks: [], lowestLevel: "fatal" }
+    ]
+  });
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  downloadAssets
-});
+
+// entrypoints/download-assets.ts
+void (async () => {
+  await setupLogger();
+  const logger = getLogger(["bao", "action", "download-assets"]);
+  try {
+    await downloadAssets(process.env);
+  } catch (err) {
+    logger.fatal("::error::{message}", { message: err.message });
+    process.exit(1);
+  }
+})();

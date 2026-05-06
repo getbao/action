@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -32,7 +31,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // ../../node_modules/.pnpm/@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@better-fetch+fetch@1.1.21_@cloudflare_0a594f69fe464e81386a94def577d36a/node_modules/@better-auth/core/dist/env/env-impl.mjs
 function toBoolean(val) {
@@ -1795,15 +1793,9 @@ var require_dist = __commonJS({
   }
 });
 
-// scripts/generate-config.ts
-var generate_config_exports = {};
-__export(generate_config_exports, {
-  main: () => main
-});
-module.exports = __toCommonJS(generate_config_exports);
-var import_node_fs = __toESM(require("node:fs"));
-var import_node_path = __toESM(require("node:path"));
-var import_node_url = require("node:url");
+// src/generate-config.ts
+var import_node_fs = __toESM(require("node:fs"), 1);
+var import_node_path = __toESM(require("node:path"), 1);
 
 // ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/index.js
 var zod_exports = {};
@@ -15819,6 +15811,22 @@ config(en_default());
 // ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/index.js
 var zod_default = external_exports;
 
+// ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/filter.js
+function toFilter(filter) {
+  if (typeof filter === "function") return filter;
+  return getLevelFilter(filter);
+}
+function getLevelFilter(level) {
+  if (level == null) return () => false;
+  if (level === "fatal") return (record3) => record3.level === "fatal";
+  else if (level === "error") return (record3) => record3.level === "fatal" || record3.level === "error";
+  else if (level === "warning") return (record3) => record3.level === "fatal" || record3.level === "error" || record3.level === "warning";
+  else if (level === "info") return (record3) => record3.level === "fatal" || record3.level === "error" || record3.level === "warning" || record3.level === "info";
+  else if (level === "debug") return (record3) => record3.level === "fatal" || record3.level === "error" || record3.level === "warning" || record3.level === "info" || record3.level === "debug";
+  else if (level === "trace") return () => true;
+  throw new TypeError(`Invalid log level: ${level}.`);
+}
+
 // ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/level.js
 var logLevels = [
   "trace",
@@ -15905,8 +15913,8 @@ var LoggerImpl = class LoggerImpl2 {
   */
   resetDescendants() {
     for (const child of Object.values(this.children)) {
-      const logger2 = child instanceof LoggerImpl2 ? child : child.deref();
-      if (logger2 != null) logger2.resetDescendants();
+      const logger3 = child instanceof LoggerImpl2 ? child : child.deref();
+      if (logger3 != null) logger3.resetDescendants();
     }
     this.reset();
   }
@@ -16220,8 +16228,8 @@ var LoggerImpl = class LoggerImpl2 {
 var LoggerCtx = class LoggerCtx2 {
   logger;
   properties;
-  constructor(logger2, properties) {
-    this.logger = logger2;
+  constructor(logger3, properties) {
+    this.logger = logger3;
     this.properties = properties;
   }
   get category() {
@@ -16641,6 +16649,551 @@ function getImplicitContext() {
   for (const key of Object.keys(store)) result[key] = store[key];
   return result;
 }
+
+// ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/util.node.js
+var util_node_exports = {};
+__export(util_node_exports, {
+  inspect: () => inspect
+});
+var import_node_util = __toESM(require("node:util"), 1);
+function inspect(obj, options) {
+  return import_node_util.default.inspect(obj, options);
+}
+
+// ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/formatter.js
+var levelAbbreviations = {
+  "trace": "TRC",
+  "debug": "DBG",
+  "info": "INF",
+  "warning": "WRN",
+  "error": "ERR",
+  "fatal": "FTL"
+};
+var inspect2 = typeof document !== "undefined" || typeof navigator !== "undefined" && navigator.product === "ReactNative" ? (v) => JSON.stringify(v) : "Deno" in globalThis && "inspect" in globalThis.Deno && typeof globalThis.Deno.inspect === "function" ? (v, opts) => globalThis.Deno.inspect(v, {
+  strAbbreviateSize: Infinity,
+  iterableLimit: Infinity,
+  ...opts
+}) : util_node_exports != null && "inspect" in util_node_exports && typeof inspect === "function" ? (v, opts) => inspect(v, {
+  maxArrayLength: Infinity,
+  maxStringLength: Infinity,
+  ...opts
+}) : (v) => JSON.stringify(v);
+function padZero(num) {
+  return num < 10 ? `0${num}` : `${num}`;
+}
+function padThree(num) {
+  return num < 10 ? `00${num}` : num < 100 ? `0${num}` : `${num}`;
+}
+var timestampFormatters = {
+  "date-time-timezone": (ts) => {
+    const d = new Date(ts);
+    const year2 = d.getUTCFullYear();
+    const month = padZero(d.getUTCMonth() + 1);
+    const day2 = padZero(d.getUTCDate());
+    const hour2 = padZero(d.getUTCHours());
+    const minute2 = padZero(d.getUTCMinutes());
+    const second = padZero(d.getUTCSeconds());
+    const ms2 = padThree(d.getUTCMilliseconds());
+    return `${year2}-${month}-${day2} ${hour2}:${minute2}:${second}.${ms2} +00:00`;
+  },
+  "date-time-tz": (ts) => {
+    const d = new Date(ts);
+    const year2 = d.getUTCFullYear();
+    const month = padZero(d.getUTCMonth() + 1);
+    const day2 = padZero(d.getUTCDate());
+    const hour2 = padZero(d.getUTCHours());
+    const minute2 = padZero(d.getUTCMinutes());
+    const second = padZero(d.getUTCSeconds());
+    const ms2 = padThree(d.getUTCMilliseconds());
+    return `${year2}-${month}-${day2} ${hour2}:${minute2}:${second}.${ms2} +00`;
+  },
+  "date-time": (ts) => {
+    const d = new Date(ts);
+    const year2 = d.getUTCFullYear();
+    const month = padZero(d.getUTCMonth() + 1);
+    const day2 = padZero(d.getUTCDate());
+    const hour2 = padZero(d.getUTCHours());
+    const minute2 = padZero(d.getUTCMinutes());
+    const second = padZero(d.getUTCSeconds());
+    const ms2 = padThree(d.getUTCMilliseconds());
+    return `${year2}-${month}-${day2} ${hour2}:${minute2}:${second}.${ms2}`;
+  },
+  "time-timezone": (ts) => {
+    const d = new Date(ts);
+    const hour2 = padZero(d.getUTCHours());
+    const minute2 = padZero(d.getUTCMinutes());
+    const second = padZero(d.getUTCSeconds());
+    const ms2 = padThree(d.getUTCMilliseconds());
+    return `${hour2}:${minute2}:${second}.${ms2} +00:00`;
+  },
+  "time-tz": (ts) => {
+    const d = new Date(ts);
+    const hour2 = padZero(d.getUTCHours());
+    const minute2 = padZero(d.getUTCMinutes());
+    const second = padZero(d.getUTCSeconds());
+    const ms2 = padThree(d.getUTCMilliseconds());
+    return `${hour2}:${minute2}:${second}.${ms2} +00`;
+  },
+  "time": (ts) => {
+    const d = new Date(ts);
+    const hour2 = padZero(d.getUTCHours());
+    const minute2 = padZero(d.getUTCMinutes());
+    const second = padZero(d.getUTCSeconds());
+    const ms2 = padThree(d.getUTCMilliseconds());
+    return `${hour2}:${minute2}:${second}.${ms2}`;
+  },
+  "date": (ts) => {
+    const d = new Date(ts);
+    const year2 = d.getUTCFullYear();
+    const month = padZero(d.getUTCMonth() + 1);
+    const day2 = padZero(d.getUTCDate());
+    return `${year2}-${month}-${day2}`;
+  },
+  "rfc3339": (ts) => new Date(ts).toISOString(),
+  "none": () => null
+};
+var levelRenderersCache = {
+  ABBR: levelAbbreviations,
+  abbr: {
+    trace: "trc",
+    debug: "dbg",
+    info: "inf",
+    warning: "wrn",
+    error: "err",
+    fatal: "ftl"
+  },
+  FULL: {
+    trace: "TRACE",
+    debug: "DEBUG",
+    info: "INFO",
+    warning: "WARNING",
+    error: "ERROR",
+    fatal: "FATAL"
+  },
+  full: {
+    trace: "trace",
+    debug: "debug",
+    info: "info",
+    warning: "warning",
+    error: "error",
+    fatal: "fatal"
+  },
+  L: {
+    trace: "T",
+    debug: "D",
+    info: "I",
+    warning: "W",
+    error: "E",
+    fatal: "F"
+  },
+  l: {
+    trace: "t",
+    debug: "d",
+    info: "i",
+    warning: "w",
+    error: "e",
+    fatal: "f"
+  }
+};
+function getLineEndingValue(lineEnding) {
+  return lineEnding === "crlf" ? "\r\n" : "\n";
+}
+function jsonReplacer(_key, value) {
+  if (!(value instanceof Error)) return value;
+  const serialized = {
+    name: value.name,
+    message: value.message
+  };
+  if (typeof value.stack === "string") serialized.stack = value.stack;
+  const cause = value.cause;
+  if (cause !== void 0) serialized.cause = cause;
+  if (typeof AggregateError !== "undefined" && value instanceof AggregateError) serialized.errors = value.errors;
+  for (const key of Object.keys(value)) if (!(key in serialized)) serialized[key] = value[key];
+  return serialized;
+}
+function getTextFormatter(options = {}) {
+  const timestampRenderer = (() => {
+    const tsOption = options.timestamp;
+    if (tsOption == null) return timestampFormatters["date-time-timezone"];
+    else if (tsOption === "disabled") return timestampFormatters["none"];
+    else if (typeof tsOption === "string" && tsOption in timestampFormatters) return timestampFormatters[tsOption];
+    else return tsOption;
+  })();
+  const categorySeparator = options.category ?? "\xB7";
+  const valueRenderer = options.value ? (v) => options.value(v, inspect2) : inspect2;
+  const levelRenderer = (() => {
+    const levelOption = options.level;
+    if (levelOption == null || levelOption === "ABBR") return (level) => levelRenderersCache.ABBR[level];
+    else if (levelOption === "abbr") return (level) => levelRenderersCache.abbr[level];
+    else if (levelOption === "FULL") return (level) => levelRenderersCache.FULL[level];
+    else if (levelOption === "full") return (level) => levelRenderersCache.full[level];
+    else if (levelOption === "L") return (level) => levelRenderersCache.L[level];
+    else if (levelOption === "l") return (level) => levelRenderersCache.l[level];
+    else return levelOption;
+  })();
+  const lineEnding = getLineEndingValue(options.lineEnding);
+  const formatter = options.format ?? (({ timestamp, level, category, message: message2 }) => `${timestamp ? `${timestamp} ` : ""}[${level}] ${category}: ${message2}`);
+  return (record3) => {
+    const msgParts = record3.message;
+    const msgLen = msgParts.length;
+    let message2;
+    if (msgLen === 1) message2 = msgParts[0];
+    else if (msgLen <= 6) {
+      message2 = "";
+      for (let i = 0; i < msgLen; i++) message2 += i % 2 === 0 ? msgParts[i] : valueRenderer(msgParts[i]);
+    } else {
+      const parts = new Array(msgLen);
+      for (let i = 0; i < msgLen; i++) parts[i] = i % 2 === 0 ? msgParts[i] : valueRenderer(msgParts[i]);
+      message2 = parts.join("");
+    }
+    const timestamp = timestampRenderer(record3.timestamp);
+    const level = levelRenderer(record3.level);
+    const category = typeof categorySeparator === "function" ? categorySeparator(record3.category) : record3.category.join(categorySeparator);
+    const values = {
+      timestamp,
+      level,
+      category,
+      message: message2,
+      record: record3
+    };
+    return `${formatter(values)}${lineEnding}`;
+  };
+}
+var defaultTextFormatter = getTextFormatter();
+var RESET = "\x1B[0m";
+var ansiColors = {
+  black: "\x1B[30m",
+  red: "\x1B[31m",
+  green: "\x1B[32m",
+  yellow: "\x1B[33m",
+  blue: "\x1B[34m",
+  magenta: "\x1B[35m",
+  cyan: "\x1B[36m",
+  white: "\x1B[37m"
+};
+var ansiStyles = {
+  bold: "\x1B[1m",
+  dim: "\x1B[2m",
+  italic: "\x1B[3m",
+  underline: "\x1B[4m",
+  strikethrough: "\x1B[9m"
+};
+var defaultLevelColors = {
+  trace: null,
+  debug: "blue",
+  info: "green",
+  warning: "yellow",
+  error: "red",
+  fatal: "magenta"
+};
+function getAnsiColorFormatter(options = {}) {
+  const format = options.format;
+  const timestampStyle = typeof options.timestampStyle === "undefined" ? "dim" : options.timestampStyle;
+  const timestampColor = options.timestampColor ?? null;
+  const timestampPrefix = `${timestampStyle == null ? "" : ansiStyles[timestampStyle]}${timestampColor == null ? "" : ansiColors[timestampColor]}`;
+  const timestampSuffix = timestampStyle == null && timestampColor == null ? "" : RESET;
+  const levelStyle = typeof options.levelStyle === "undefined" ? "bold" : options.levelStyle;
+  const levelColors2 = options.levelColors ?? defaultLevelColors;
+  const categoryStyle = typeof options.categoryStyle === "undefined" ? "dim" : options.categoryStyle;
+  const categoryColor = options.categoryColor ?? null;
+  const categoryPrefix = `${categoryStyle == null ? "" : ansiStyles[categoryStyle]}${categoryColor == null ? "" : ansiColors[categoryColor]}`;
+  const categorySuffix = categoryStyle == null && categoryColor == null ? "" : RESET;
+  return getTextFormatter({
+    timestamp: "date-time-tz",
+    value(value, fallbackInspect) {
+      return fallbackInspect(value, { colors: true });
+    },
+    ...options,
+    format({ timestamp, level, category, message: message2, record: record3 }) {
+      const levelColor = levelColors2[record3.level];
+      timestamp = timestamp == null ? null : `${timestampPrefix}${timestamp}${timestampSuffix}`;
+      level = `${levelStyle == null ? "" : ansiStyles[levelStyle]}${levelColor == null ? "" : ansiColors[levelColor]}${level}${levelStyle == null && levelColor == null ? "" : RESET}`;
+      return format == null ? `${timestamp == null ? "" : `${timestamp} `}${level} ${categoryPrefix}${category}:${categorySuffix} ${message2}` : format({
+        timestamp,
+        level,
+        category: `${categoryPrefix}${category}${categorySuffix}`,
+        message: message2,
+        record: record3
+      });
+    }
+  });
+}
+var ansiColorFormatter = getAnsiColorFormatter();
+function getJsonLinesFormatter(options = {}) {
+  const lineEnding = getLineEndingValue(options.lineEnding);
+  if (!options.categorySeparator && !options.message && !options.properties) return (record3) => {
+    if (record3.message.length === 3) return JSON.stringify({
+      "@timestamp": new Date(record3.timestamp).toISOString(),
+      level: record3.level === "warning" ? "WARN" : record3.level.toUpperCase(),
+      message: record3.message[0] + JSON.stringify(record3.message[1]) + record3.message[2],
+      logger: record3.category.join("."),
+      properties: record3.properties
+    }, jsonReplacer) + lineEnding;
+    if (record3.message.length === 1) return JSON.stringify({
+      "@timestamp": new Date(record3.timestamp).toISOString(),
+      level: record3.level === "warning" ? "WARN" : record3.level.toUpperCase(),
+      message: record3.message[0],
+      logger: record3.category.join("."),
+      properties: record3.properties
+    }, jsonReplacer) + lineEnding;
+    let msg = record3.message[0];
+    for (let i = 1; i < record3.message.length; i++) msg += i & 1 ? JSON.stringify(record3.message[i]) : record3.message[i];
+    return JSON.stringify({
+      "@timestamp": new Date(record3.timestamp).toISOString(),
+      level: record3.level === "warning" ? "WARN" : record3.level.toUpperCase(),
+      message: msg,
+      logger: record3.category.join("."),
+      properties: record3.properties
+    }, jsonReplacer) + lineEnding;
+  };
+  const isTemplateMessage = options.message === "template";
+  const propertiesOption = options.properties ?? "nest:properties";
+  let joinCategory;
+  if (typeof options.categorySeparator === "function") joinCategory = options.categorySeparator;
+  else {
+    const separator = options.categorySeparator ?? ".";
+    joinCategory = (category) => category.join(separator);
+  }
+  let getProperties;
+  if (propertiesOption === "flatten") getProperties = (properties) => properties;
+  else if (propertiesOption.startsWith("prepend:")) {
+    const prefix = propertiesOption.substring(8);
+    if (prefix === "") throw new TypeError(`Invalid properties option: ${JSON.stringify(propertiesOption)}. It must be of the form "prepend:<prefix>" where <prefix> is a non-empty string.`);
+    getProperties = (properties) => {
+      const result = {};
+      for (const key in properties) result[`${prefix}${key}`] = properties[key];
+      return result;
+    };
+  } else if (propertiesOption.startsWith("nest:")) {
+    const key = propertiesOption.substring(5);
+    getProperties = (properties) => ({ [key]: properties });
+  } else throw new TypeError(`Invalid properties option: ${JSON.stringify(propertiesOption)}. It must be "flatten", "prepend:<prefix>", or "nest:<key>".`);
+  let getMessage;
+  if (isTemplateMessage) getMessage = (record3) => {
+    if (typeof record3.rawMessage === "string") return record3.rawMessage;
+    let msg = "";
+    for (let i = 0; i < record3.rawMessage.length; i++) msg += i % 2 < 1 ? record3.rawMessage[i] : "{}";
+    return msg;
+  };
+  else getMessage = (record3) => {
+    const msgLen = record3.message.length;
+    if (msgLen === 1) return record3.message[0];
+    let msg = "";
+    for (let i = 0; i < msgLen; i++) msg += i % 2 < 1 ? record3.message[i] : JSON.stringify(record3.message[i]);
+    return msg;
+  };
+  return (record3) => {
+    return JSON.stringify({
+      "@timestamp": new Date(record3.timestamp).toISOString(),
+      level: record3.level === "warning" ? "WARN" : record3.level.toUpperCase(),
+      message: getMessage(record3),
+      logger: joinCategory(record3.category),
+      ...getProperties(record3.properties)
+    }, jsonReplacer) + lineEnding;
+  };
+}
+var jsonLinesFormatter = getJsonLinesFormatter();
+var logLevelStyles = {
+  "trace": "background-color: gray; color: white;",
+  "debug": "background-color: gray; color: white;",
+  "info": "background-color: white; color: black;",
+  "warning": "background-color: orange; color: black;",
+  "error": "background-color: red; color: white;",
+  "fatal": "background-color: maroon; color: white;"
+};
+function defaultConsoleFormatter(record3) {
+  let msg = "";
+  const values = [];
+  for (let i = 0; i < record3.message.length; i++) if (i % 2 === 0) msg += record3.message[i];
+  else {
+    msg += "%o";
+    values.push(record3.message[i]);
+  }
+  const date8 = new Date(record3.timestamp);
+  const time4 = `${date8.getUTCHours().toString().padStart(2, "0")}:${date8.getUTCMinutes().toString().padStart(2, "0")}:${date8.getUTCSeconds().toString().padStart(2, "0")}.${date8.getUTCMilliseconds().toString().padStart(3, "0")}`;
+  return [
+    `%c${time4} %c${levelAbbreviations[record3.level]}%c %c${record3.category.join("\xB7")} %c${msg}`,
+    "color: gray;",
+    logLevelStyles[record3.level],
+    "background-color: default;",
+    "color: gray;",
+    "color: default;",
+    ...values
+  ];
+}
+
+// ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/sink.js
+function getConsoleSink(options = {}) {
+  const formatter = options.formatter ?? defaultConsoleFormatter;
+  const levelMap = {
+    trace: "debug",
+    debug: "debug",
+    info: "info",
+    warning: "warn",
+    error: "error",
+    fatal: "error",
+    ...options.levelMap ?? {}
+  };
+  const console2 = options.console ?? globalThis.console;
+  const baseSink = (record3) => {
+    const args = formatter(record3);
+    const method = levelMap[record3.level];
+    if (method === void 0) throw new TypeError(`Invalid log level: ${record3.level}.`);
+    if (typeof args === "string") {
+      const msg = args.replace(/\r?\n$/, "");
+      console2[method](msg);
+    } else console2[method](...args);
+  };
+  if (!options.nonBlocking) return baseSink;
+  const nonBlockingConfig = options.nonBlocking === true ? {} : options.nonBlocking;
+  const bufferSize = nonBlockingConfig.bufferSize ?? 100;
+  const flushInterval = nonBlockingConfig.flushInterval ?? 100;
+  const buffer = [];
+  let flushTimer = null;
+  let disposed = false;
+  let flushScheduled = false;
+  const maxBufferSize = bufferSize * 2;
+  function flush() {
+    if (buffer.length === 0) return;
+    const records = buffer.splice(0);
+    for (const record3 of records) try {
+      baseSink(record3);
+    } catch {
+    }
+  }
+  function scheduleFlush() {
+    if (flushScheduled) return;
+    flushScheduled = true;
+    setTimeout(() => {
+      flushScheduled = false;
+      flush();
+    }, 0);
+  }
+  function startFlushTimer() {
+    if (flushTimer !== null || disposed) return;
+    flushTimer = setInterval(() => {
+      flush();
+    }, flushInterval);
+  }
+  const nonBlockingSink = (record3) => {
+    if (disposed) return;
+    if (buffer.length >= maxBufferSize) buffer.shift();
+    buffer.push(record3);
+    if (buffer.length >= bufferSize) scheduleFlush();
+    else if (flushTimer === null) startFlushTimer();
+  };
+  nonBlockingSink[Symbol.dispose] = () => {
+    disposed = true;
+    if (flushTimer !== null) {
+      clearInterval(flushTimer);
+      flushTimer = null;
+    }
+    flush();
+  };
+  return nonBlockingSink;
+}
+
+// ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/config.js
+var currentConfig = null;
+var strongRefs = /* @__PURE__ */ new Set();
+var disposables = /* @__PURE__ */ new Set();
+var asyncDisposables = /* @__PURE__ */ new Set();
+function isLoggerConfigMeta(cfg) {
+  return cfg.category.length === 0 || cfg.category.length === 1 && cfg.category[0] === "logtape" || cfg.category.length === 2 && cfg.category[0] === "logtape" && cfg.category[1] === "meta";
+}
+async function configure(config2) {
+  if (currentConfig != null && !config2.reset) throw new ConfigError("Already configured; if you want to reset, turn on the reset flag.");
+  await reset();
+  try {
+    configureInternal(config2, true);
+  } catch (e3) {
+    if (e3 instanceof ConfigError) await reset();
+    throw e3;
+  }
+}
+function configureInternal(config2, allowAsync) {
+  currentConfig = config2;
+  let metaConfigured = false;
+  const configuredCategories = /* @__PURE__ */ new Set();
+  for (const cfg of config2.loggers) {
+    if (isLoggerConfigMeta(cfg)) metaConfigured = true;
+    const categoryKey = Array.isArray(cfg.category) ? JSON.stringify(cfg.category) : JSON.stringify([cfg.category]);
+    if (configuredCategories.has(categoryKey)) throw new ConfigError(`Duplicate logger configuration for category: ${categoryKey}. Each category can only be configured once.`);
+    configuredCategories.add(categoryKey);
+    const logger3 = LoggerImpl.getLogger(cfg.category);
+    for (const sinkId of cfg.sinks ?? []) {
+      const sink = config2.sinks[sinkId];
+      if (!sink) throw new ConfigError(`Sink not found: ${sinkId}.`);
+      logger3.sinks.push(sink);
+    }
+    logger3.parentSinks = cfg.parentSinks ?? "inherit";
+    if (cfg.lowestLevel !== void 0) logger3.lowestLevel = cfg.lowestLevel;
+    for (const filterId of cfg.filters ?? []) {
+      const filter = config2.filters?.[filterId];
+      if (filter === void 0) throw new ConfigError(`Filter not found: ${filterId}.`);
+      logger3.filters.push(toFilter(filter));
+    }
+    strongRefs.add(logger3);
+  }
+  LoggerImpl.getLogger().contextLocalStorage = config2.contextLocalStorage;
+  for (const sink of Object.values(config2.sinks)) {
+    if (Symbol.asyncDispose in sink) if (allowAsync) asyncDisposables.add(sink);
+    else throw new ConfigError("Async disposables cannot be used with configureSync().");
+    if (Symbol.dispose in sink) disposables.add(sink);
+  }
+  for (const filter of Object.values(config2.filters ?? {})) {
+    if (filter == null || typeof filter === "string") continue;
+    if (Symbol.asyncDispose in filter) if (allowAsync) asyncDisposables.add(filter);
+    else throw new ConfigError("Async disposables cannot be used with configureSync().");
+    if (Symbol.dispose in filter) disposables.add(filter);
+  }
+  if (typeof globalThis.EdgeRuntime !== "string" && "process" in globalThis && !("Deno" in globalThis)) {
+    const proc = globalThis.process;
+    const onMethod = proc?.["on"];
+    if (typeof onMethod === "function") onMethod.call(proc, "exit", allowAsync ? dispose : disposeSync);
+  } else if ("Deno" in globalThis) addEventListener("unload", allowAsync ? dispose : disposeSync);
+  else addEventListener("pagehide", allowAsync ? dispose : disposeSync);
+  const meta3 = LoggerImpl.getLogger(["logtape", "meta"]);
+  if (!metaConfigured) meta3.sinks.push(getConsoleSink());
+  meta3.info("LogTape loggers are configured.  Note that LogTape itself uses the meta logger, which has category {metaLoggerCategory}.  The meta logger purposes to log internal errors such as sink exceptions.  If you are seeing this message, the meta logger is automatically configured.  It's recommended to configure the meta logger with a separate sink so that you can easily notice if logging itself fails or is misconfigured.  To turn off this message, configure the meta logger with higher log levels than {dismissLevel}.  See also <https://logtape.org/manual/categories#meta-logger>.", {
+    metaLoggerCategory: ["logtape", "meta"],
+    dismissLevel: "info"
+  });
+}
+async function reset() {
+  await dispose();
+  resetInternal();
+}
+function resetInternal() {
+  const rootLogger = LoggerImpl.getLogger([]);
+  rootLogger.resetDescendants();
+  delete rootLogger.contextLocalStorage;
+  strongRefs.clear();
+  currentConfig = null;
+}
+async function dispose() {
+  disposeSync();
+  const promises = [];
+  for (const disposable of asyncDisposables) {
+    promises.push(disposable[Symbol.asyncDispose]());
+    asyncDisposables.delete(disposable);
+  }
+  await Promise.all(promises);
+}
+function disposeSync() {
+  for (const disposable of disposables) disposable[Symbol.dispose]();
+  disposables.clear();
+}
+var ConfigError = class extends Error {
+  /**
+  * Constructs a new configuration error.
+  * @param message The error message.
+  */
+  constructor(message2) {
+    super(message2);
+    this.name = "ConfigureError";
+  }
+};
 
 // ../../node_modules/.pnpm/better-auth@1.5.5_@cloudflare+workers-types@4.20260228.0_better-sqlite3@12.6.2_drizzle-_b79d6c77dd634f340a5e3ada83a84ae3/node_modules/better-auth/dist/utils/wildcard.mjs
 function escapeRegExpChar(char) {
@@ -21538,7 +22091,7 @@ function joinChunks(chunks) {
     return getChunkIndex(a) - getChunkIndex(b);
   }).map((key) => chunks[key]).join("");
 }
-function chunkCookie(storeName, cookie, chunks, logger2) {
+function chunkCookie(storeName, cookie, chunks, logger3) {
   const chunkCount = Math.ceil(cookie.value.length / CHUNK_SIZE);
   if (chunkCount === 1) {
     chunks[cookie.name] = cookie.value;
@@ -21556,7 +22109,7 @@ function chunkCookie(storeName, cookie, chunks, logger2) {
     });
     chunks[name] = value;
   }
-  logger2.debug(`CHUNKING_${storeName.toUpperCase()}_COOKIE`, {
+  logger3.debug(`CHUNKING_${storeName.toUpperCase()}_COOKIE`, {
     message: `${storeName} cookie exceeds allowed ${ALLOWED_COOKIE_SIZE} bytes.`,
     emptyCookieSize: ESTIMATED_EMPTY_COOKIE_SIZE,
     valueSize: cookie.value.length,
@@ -21579,7 +22132,7 @@ function getCleanCookies(chunks, cookieOptions) {
 }
 var storeFactory = (storeName) => (cookieName, cookieOptions, ctx) => {
   const chunks = readExistingChunks(cookieName, ctx);
-  const logger2 = ctx.context.logger;
+  const logger3 = ctx.context.logger;
   return {
     getValue() {
       return joinChunks(chunks);
@@ -21598,7 +22151,7 @@ var storeFactory = (storeName) => (cookieName, cookieOptions, ctx) => {
           ...cookieOptions,
           ...options
         }
-      }, chunks, logger2);
+      }, chunks, logger3);
       for (const chunk of chunked) cookies[chunk.name] = chunk;
       return Object.values(cookies);
     },
@@ -22740,11 +23293,11 @@ function createAuthEndpoint(pathOrOptions, handlerOrOptions, handlerOrNever) {
 }
 
 // ../../node_modules/.pnpm/@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@better-fetch+fetch@1.1.21_@cloudflare_0a594f69fe464e81386a94def577d36a/node_modules/@better-auth/core/dist/utils/deprecate.mjs
-function deprecate(fn, message2, logger2) {
+function deprecate(fn, message2, logger3) {
   let warned = false;
   return function(...args) {
     if (!warned) {
-      (logger2?.warn ?? console.warn)(`[Deprecation] ${message2}`);
+      (logger3?.warn ?? console.warn)(`[Deprecation] ${message2}`);
       warned = true;
     }
     return fn.apply(this, args);
@@ -23224,7 +23777,7 @@ function getTTLSeconds(expiresAt, now2 = Date.now()) {
   return Math.max(Math.floor((expiresMs - now2) / 1e3), 0);
 }
 var createInternalAdapter = (adapter, ctx) => {
-  const logger2 = ctx.logger;
+  const logger3 = ctx.logger;
   const options = ctx.options;
   const secondaryStorage = options.secondaryStorage;
   const sessionExpiration = options.session?.expiresIn || 3600 * 24 * 7;
@@ -23538,7 +24091,7 @@ var createInternalAdapter = (adapter, ctx) => {
         if (data) {
           const { session } = safeJSONParse(data) ?? {};
           if (!session) {
-            logger2.error("Session not found in secondary storage");
+            logger3.error("Session not found in secondary storage");
             return;
           }
           const userId = session.userId;
@@ -23550,7 +24103,7 @@ var createInternalAdapter = (adapter, ctx) => {
             const furthestSessionExp = filtered.sort((a, b) => a.expiresAt - b.expiresAt).at(-1)?.expiresAt;
             if (filtered.length > 0 && furthestSessionExp && furthestSessionExp > Date.now()) await secondaryStorage.set(`active-sessions-${userId}`, JSON.stringify(filtered), getTTLSeconds(furthestSessionExp, now2));
             else await secondaryStorage.delete(`active-sessions-${userId}`);
-          } else logger2.error("Active sessions list not found in secondary storage");
+          } else logger3.error("Active sessions list not found in secondary storage");
         }
         await secondaryStorage.delete(token);
         if (!options.session?.storeSessionInDatabase || ctx.options.session?.preserveSessionInDatabase) return;
@@ -37972,7 +38525,7 @@ function encodeJSON(key, value, options) {
   const encodeString = (v) => {
     return options?.charEncoding === "percent" ? encodeURIComponent(v) : v;
   };
-  const encVal = encodeString(JSON.stringify(value, jsonReplacer));
+  const encVal = encodeString(JSON.stringify(value, jsonReplacer2));
   return options?.explode ? encVal : `${encodeString(key)}=${encVal}`;
 }
 function explode(key, value) {
@@ -37993,11 +38546,11 @@ function serializeValue(value) {
   } else if (value instanceof Uint8Array) {
     return bytesToBase64(value);
   } else if (typeof value === "object") {
-    return JSON.stringify(value, jsonReplacer);
+    return JSON.stringify(value, jsonReplacer2);
   }
   return `${value}`;
 }
-function jsonReplacer(_, value) {
+function jsonReplacer2(_, value) {
   if (value instanceof Uint8Array) {
     return bytesToBase64(value);
   } else {
@@ -48908,19 +49461,19 @@ var s2 = external_exports.object({ enabled: external_exports.boolean().default(f
 var c = external_exports.object({ origins: external_exports.array(external_exports.string()).default([]) });
 var l = external_exports.object({ appName: external_exports.string().min(1).default(`getbao`), mailer: o.optional(), auth: external_exports.object({ baseURL: external_exports.string().url().optional(), basePath: external_exports.string().default(`/api/auth`), plugins: external_exports.object({ password: n2.optional(), organization: t3.optional(), otp: t4.optional(), jwks: t2.optional(), polar: n3.optional() }), social: external_exports.object({ github: s2.optional(), google: s2.optional() }).optional() }), cors: c });
 
-// scripts/generate-config.ts
-var import_meta = {};
+// src/generate-config.ts
+var logger2 = getLogger(["bao", "action", "generate-config"]);
 function setOutput(name, value) {
   const outputFile = process.env.GITHUB_OUTPUT;
   if (outputFile) {
     import_node_fs.default.appendFileSync(outputFile, `${name}=${value}
 `);
   } else {
-    console.log(`::set-output name=${name}::${value}`);
+    logger2.debug("::set-output name={name}::{value}", { name, value });
   }
 }
 function fail2(message2) {
-  console.error(`::error::${message2}`);
+  logger2.fatal("::error::{message}", { message: message2 });
   process.exit(1);
 }
 async function main() {
@@ -48989,9 +49542,10 @@ async function main() {
   };
   const wranglerConfigPath = import_node_path.default.resolve(workDir, "wrangler.json");
   import_node_fs.default.writeFileSync(wranglerConfigPath, JSON.stringify(wranglerConfig, null, 2));
-  console.log(
-    `wrangler.json written to ${wranglerConfigPath} with env [${deployEnv}]`
-  );
+  logger2.info("wrangler.json written to {path} with env [{env}]", {
+    path: wranglerConfigPath,
+    env: deployEnv
+  });
   const rotationWorkerName = `${config2.appName}-rotation`;
   const rotationConfig = {
     name: rotationWorkerName,
@@ -49009,27 +49563,42 @@ async function main() {
   };
   const rotationConfigPath = import_node_path.default.resolve(workDir, "wrangler-rotation.json");
   import_node_fs.default.writeFileSync(rotationConfigPath, JSON.stringify(rotationConfig, null, 2));
-  console.log(
-    `wrangler-rotation.json written to ${rotationConfigPath} with env [${deployEnv}]`
-  );
+  logger2.info("wrangler-rotation.json written to {path} with env [{env}]", {
+    path: rotationConfigPath,
+    env: deployEnv
+  });
   setOutput("app_name", config2.appName);
   setOutput("rotation_worker_name", rotationWorkerName);
   setOutput("db_id", dbId);
   setOutput("base_url", config2.auth?.baseURL ?? "");
-  console.log(
-    `Config generated for app: ${config2.appName} in env: ${deployEnv}`
-  );
-}
-if (process.argv[1] === (0, import_node_url.fileURLToPath)(import_meta.url)) {
-  main().catch((err) => {
-    console.error(`::error::${err.message}`);
-    process.exit(1);
+  logger2.info("Config generated for app: {app} in env: {env}", {
+    app: config2.appName,
+    env: deployEnv
   });
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  main
-});
+
+// src/logger.ts
+async function setupLogger() {
+  await configure({
+    sinks: { console: getConsoleSink() },
+    loggers: [
+      { category: ["bao"], sinks: ["console"], lowestLevel: "info" },
+      { category: ["logtape", "meta"], sinks: [], lowestLevel: "fatal" }
+    ]
+  });
+}
+
+// entrypoints/generate-config.ts
+void (async () => {
+  await setupLogger();
+  const logger3 = getLogger(["bao", "action", "generate-config"]);
+  try {
+    await main();
+  } catch (err) {
+    logger3.fatal("::error::{message}", { message: err.message });
+    process.exit(1);
+  }
+})();
 /*! Bundled license information:
 
 @noble/hashes/utils.js:
