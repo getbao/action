@@ -47,6 +47,12 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # ── Setup Node.js ──────────────────────────────────────────────────────
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
     # ── Restore asset cache ────────────────────────────────────────────────
     - name: Restore asset cache
       id: asset-cache
@@ -151,15 +157,6 @@ runs:
       env:
         APP_SECRETS: ${{ inputs.app_secrets }}
 
-    # ---
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-
-    - name: Install Cloudflare Wrangler
-      id: install-wrangler
-      shell: bash
-      run: pnpm add -g wrangler
-
     # ── Apply D1 Migrations ───────────────────────────────────────────────
     - name: Apply Database Migrations
       if: ${{ steps.tofu-outputs.outputs.db_id != '' }}
@@ -167,13 +164,16 @@ runs:
       run: |
         if [ -d "$GITHUB_WORKSPACE/.bao-assets/migrations" ] && [ "$(ls -A $GITHUB_WORKSPACE/.bao-assets/migrations)" ]; then
           echo "Running migrations against DB binding..."
-          npx wrangler d1 migrations apply DB --remote -c wrangler.json --env ${{ inputs.environment }}
+          npx --yes wrangler d1 migrations apply DB --remote -c wrangler.json --env ${{ inputs.environment }}
         else
           echo "No migrations found, skipping."
         fi
       env:
         CLOUDFLARE_API_TOKEN: ${{ inputs.api_token }}
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
+        npm_config_registry: https://registry.npmjs.org
+        npm_config_userconfig: /dev/null
+        npm_config_cache: /tmp/bao-npm-cache
 
     # ── Deploy Auth Worker ────────────────────────────────────────────────
     - name: Deploy Auth Worker
@@ -185,6 +185,7 @@ runs:
         workingDirectory: ${{ github.workspace }}
         command: deploy -c wrangler.json --env ${{ inputs.environment }}
         secrets: ${{ env.SECRET_KEYS }}
+        packageManager: npm
 
     # ── Deploy Rotation Worker ────────────────────────────────────────────
     - name: Deploy Rotation Worker
@@ -195,6 +196,7 @@ runs:
         accountId: ${{ inputs.account_id }}
         workingDirectory: ${{ github.workspace }}
         command: deploy -c wrangler-rotation.json --env ${{ inputs.environment }}
+        packageManager: npm
 
     # ── Bootstrap Secrets ────────────────────────────────────────────────
     - name: Bootstrap Auth Secrets
