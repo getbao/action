@@ -49505,6 +49505,7 @@ async function main() {
   const deployEnv = process.env.DEPLOY_ENV || "dev";
   const dbId = process.env.TOFU_DB_ID ?? "";
   const kvId = process.env.TOFU_KV_ID ?? "";
+  const assetsDir = process.env.ASSETS_DIR ?? import_node_path.default.resolve(workDir, ".bao-assets");
   const workerFileName = "worker.js";
   if (deployEnv === "production" && !config2.auth?.baseURL) {
     fail2(
@@ -49525,7 +49526,8 @@ async function main() {
         {
           binding: "DB",
           database_name: `bao_db_${deployEnv}`,
-          database_id: dbId
+          database_id: dbId,
+          migrations_dir: import_node_path.default.join(assetsDir, "migrations")
         }
       ]
     },

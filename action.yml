@@ -141,6 +141,7 @@ runs:
         TOFU_DB_ID: ${{ steps.tofu-outputs.outputs.db_id }}
         TOFU_DB_NAME: ${{ steps.tofu-outputs.outputs.db_name }}
         TOFU_KV_ID: ${{ steps.tofu-outputs.outputs.kv_id }}
+        ASSETS_DIR: ${{ github.workspace }}/.bao-assets
 
     # ── Parse App Secrets ──────────────────────────────────────────────────
     - name: Parse app secrets
