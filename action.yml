@@ -186,6 +186,7 @@ runs:
         command: deploy -c wrangler.json --env ${{ inputs.environment }}
         secrets: ${{ env.SECRET_KEYS }}
         packageManager: npm
+        wranglerVersion: "4"
 
     # ── Deploy Rotation Worker ────────────────────────────────────────────
     - name: Deploy Rotation Worker
@@ -197,6 +198,7 @@ runs:
         workingDirectory: ${{ github.workspace }}
         command: deploy -c wrangler-rotation.json --env ${{ inputs.environment }}
         packageManager: npm
+        wranglerVersion: "4"
 
     # ── Bootstrap Secrets ────────────────────────────────────────────────
     - name: Bootstrap Auth Secrets

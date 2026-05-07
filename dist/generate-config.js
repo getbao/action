@@ -49506,7 +49506,8 @@ async function main() {
   const dbId = process.env.TOFU_DB_ID ?? "";
   const kvId = process.env.TOFU_KV_ID ?? "";
   const assetsDir = process.env.ASSETS_DIR ?? import_node_path.default.resolve(workDir, ".bao-assets");
-  const workerFileName = "worker.js";
+  const workerFileName = import_node_path.default.join(assetsDir, "worker.js");
+  const rotationWorkerFileName = import_node_path.default.join(assetsDir, "rotation-worker.js");
   if (deployEnv === "production" && !config2.auth?.baseURL) {
     fail2(
       "auth.baseURL is required in bao.config.json for production deployments."
@@ -49551,7 +49552,7 @@ async function main() {
   const rotationWorkerName = `${config2.appName}-rotation`;
   const rotationConfig = {
     name: rotationWorkerName,
-    main: "rotation-worker.js",
+    main: rotationWorkerFileName,
     compatibility_date: compatDate,
     compatibility_flags: ["nodejs_compat"],
     env: {
