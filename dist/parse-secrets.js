@@ -1413,7 +1413,7 @@ var ConfigError = class extends Error {
   }
 };
 
-// src/logger.ts
+// src/lib/logger.ts
 async function setupLogger() {
   await configure({
     sinks: { console: getConsoleSink() },
@@ -1426,22 +1426,20 @@ async function setupLogger() {
 
 // src/parse-secrets.ts
 var import_node_crypto = __toESM(require("node:crypto"), 1);
-function parseSecrets(env, appendFileSync, log, errLog, exit) {
+function parseSecrets(env, appendFileSync, log) {
   const appSecretsStr = env.APP_SECRETS || "{}";
   const githubEnvPath = env.GITHUB_ENV;
   if (!githubEnvPath) {
-    errLog("GITHUB_ENV not found");
-    exit(1);
-    return;
+    throw new Error("GITHUB_ENV not found");
   }
-  let appSecrets = {};
+  const normalizedStr = appSecretsStr === '""' || appSecretsStr === "''" ? "{}" : appSecretsStr;
+  let appSecrets;
   try {
-    appSecrets = JSON.parse(
-      appSecretsStr === '""' || appSecretsStr === "''" ? "{}" : appSecretsStr
-    );
+    appSecrets = JSON.parse(normalizedStr);
   } catch (err) {
-    errLog(`Failed to parse APP_SECRETS JSON: ${err.message}`);
-    appSecrets = {};
+    throw new Error(
+      `Failed to parse APP_SECRETS JSON: ${err.message}`
+    );
   }
   const delimiter = import_node_crypto.default.randomBytes(16).toString("hex");
   const keys = Object.keys(appSecrets);
@@ -1467,11 +1465,15 @@ ${delimiter}
 void (async () => {
   await setupLogger();
   const logger = getLogger(["bao", "action", "parse-secrets"]);
-  parseSecrets(
-    process.env,
-    import_node_fs.default.appendFileSync,
-    (msg) => logger.info("{msg}", { msg }),
-    (msg) => logger.error("{msg}", { msg }),
-    process.exit
-  );
+  try {
+    parseSecrets(
+      process.env,
+      import_node_fs.default.appendFileSync,
+      (msg) => logger.info("{msg}", { msg })
+    );
+  } catch (err) {
+    logger.fatal("::error::{message}", { message: err.message });
+    process.exit(1);
+  }
 })();
+//# sourceMappingURL=parse-secrets.js.map

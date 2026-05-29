@@ -6,6 +6,7 @@ const SCRIPTS = [
 	"generate-config",
 	"parse-secrets",
 	"bootstrap-secrets",
+	"parse-tofu-outputs",
 ];
 
 await configure({
@@ -29,6 +30,8 @@ const results = await Promise.allSettled(
 			platform: "node",
 			target: "node24",
 			format: "cjs",
+			sourcemap: true,
+			sourcesContent: true,
 		}).then(() => name),
 	),
 );

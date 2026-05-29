@@ -28,54 +28,88 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // src/bootstrap-secrets.ts
 var import_node_crypto = require("node:crypto");
-var crypto = import_node_crypto.webcrypto;
-async function kvGet(accountId, apiToken, namespaceId, key) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${apiToken}` }
-  });
-  if (res.status === 404) return null;
-  if (!res.ok)
-    throw new Error(`KV GET failed: ${res.status} ${await res.text()}`);
-  return res.text();
+
+// src/lib/retry.ts
+async function withRetry(fn, maxAttempts = 3, baseDelayMs = 500) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        const delay = baseDelayMs * 2 ** (attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
 }
-async function kvPut(accountId, apiToken, namespaceId, key, value) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${apiToken}`,
-      "Content-Type": "text/plain"
-    },
-    body: value
-  });
-  if (!res.ok)
-    throw new Error(`KV PUT failed: ${res.status} ${await res.text()}`);
-}
-async function setWorkerSecret(accountId, apiToken, workerName, name, value) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${workerName}/secrets`;
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${apiToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ name, text: value, type: "secret_text" })
-  });
-  if (!res.ok)
-    throw new Error(
-      `Set secret on ${workerName} failed: ${res.status} ${await res.text()}`
-    );
-}
+
+// src/lib/cloudflare-client.ts
+var TIMEOUT_MS = 3e4;
+var CloudflareClient = class {
+  constructor(accountId, apiToken) {
+    this.accountId = accountId;
+    this.baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}`;
+    this.headers = { Authorization: `Bearer ${apiToken}` };
+  }
+  baseUrl;
+  headers;
+  async kvGet(namespaceId, key) {
+    const url = `${this.baseUrl}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
+    return withRetry(async () => {
+      const res = await fetch(url, {
+        headers: this.headers,
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`KV GET failed: ${res.status}`);
+      return res.text();
+    });
+  }
+  async kvPut(namespaceId, key, value) {
+    const url = `${this.baseUrl}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
+    await withRetry(async () => {
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { ...this.headers, "Content-Type": "text/plain" },
+        body: value,
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      });
+      if (!res.ok) throw new Error(`KV PUT failed: ${res.status}`);
+    });
+  }
+  async setWorkerSecret(workerName, name, value) {
+    const url = `${this.baseUrl}/workers/scripts/${workerName}/secrets`;
+    await withRetry(async () => {
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { ...this.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ name, text: value, type: "secret_text" }),
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      });
+      if (!res.ok)
+        throw new Error(`Set secret on ${workerName} failed: ${res.status}`);
+    });
+  }
+};
+
+// src/lib/constants.ts
+var KV_AUTH_SECRETS_KEY = "BETTER_AUTH_SECRETS";
+var WORKER_ENCRYPTION_SECRET = "BA_SECRETS_KEY";
+var AUTH_SECRET_VERSION = "1";
+
+// src/bootstrap-secrets.ts
 async function importKey(keyBase64, usage) {
   const keyBytes = Buffer.from(keyBase64, "base64");
-  return crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, usage);
+  return import_node_crypto.webcrypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, usage);
 }
 async function encrypt(plaintext, keyBase64) {
   const key = await importKey(keyBase64, ["encrypt"]);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iv = import_node_crypto.webcrypto.getRandomValues(new Uint8Array(12));
   const encoded = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt(
+  const ciphertext = await import_node_crypto.webcrypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
     encoded
@@ -84,7 +118,7 @@ async function encrypt(plaintext, keyBase64) {
   const ctB64 = Buffer.from(new Uint8Array(ciphertext)).toString("base64");
   return `${ivB64}:${ctB64}`;
 }
-async function bootstrapSecrets(env, log, errLog, exit) {
+async function bootstrapSecrets(env, log) {
   const {
     CLOUDFLARE_ACCOUNT_ID: accountId,
     CLOUDFLARE_API_TOKEN: apiToken,
@@ -95,20 +129,14 @@ async function bootstrapSecrets(env, log, errLog, exit) {
   } = env;
   const forceRotate = forceRotateStr === "true";
   if (!accountId || !apiToken || !kvNamespaceId || !authWorkerName || !rotationWorkerName) {
-    errLog(
+    throw new Error(
       "Missing required environment variables: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, KV_NAMESPACE_ID, AUTH_WORKER_NAME, ROTATION_WORKER_NAME"
     );
-    exit(1);
-    return;
   }
-  const existing = await kvGet(
-    accountId,
-    apiToken,
-    kvNamespaceId,
-    "BETTER_AUTH_SECRETS"
-  );
+  const cf = new CloudflareClient(accountId, apiToken);
+  const existing = await cf.kvGet(kvNamespaceId, KV_AUTH_SECRETS_KEY);
   if (existing && !forceRotate) {
-    log("BETTER_AUTH_SECRETS already present in KV \u2014 skipping bootstrap.");
+    log(`${KV_AUTH_SECRETS_KEY} already present in KV \u2014 skipping bootstrap.`);
     return;
   }
   if (forceRotate) {
@@ -116,36 +144,26 @@ async function bootstrapSecrets(env, log, errLog, exit) {
       "Force rotate requested \u2014 discarding all existing versions and regenerating."
     );
   }
-  const encKeyBytes = crypto.getRandomValues(new Uint8Array(32));
+  const encKeyBytes = import_node_crypto.webcrypto.getRandomValues(new Uint8Array(32));
   const encKeyBase64 = Buffer.from(encKeyBytes).toString("base64");
-  const secretBytes = crypto.getRandomValues(new Uint8Array(32));
+  const secretBytes = import_node_crypto.webcrypto.getRandomValues(new Uint8Array(32));
   const secretBase64 = Buffer.from(secretBytes).toString("base64");
-  const secretsStr = `1:${secretBase64}`;
+  const secretsStr = `${AUTH_SECRET_VERSION}:${secretBase64}`;
   const encrypted = await encrypt(secretsStr, encKeyBase64);
-  await kvPut(
-    accountId,
-    apiToken,
-    kvNamespaceId,
-    "BETTER_AUTH_SECRETS",
-    encrypted
-  );
-  log("BETTER_AUTH_SECRETS written to KV.");
-  await setWorkerSecret(
-    accountId,
-    apiToken,
+  await cf.kvPut(kvNamespaceId, KV_AUTH_SECRETS_KEY, encrypted);
+  log(`${KV_AUTH_SECRETS_KEY} written to KV.`);
+  await cf.setWorkerSecret(
     authWorkerName,
-    "BAO_KV_ENCRYPTION_KEY",
+    WORKER_ENCRYPTION_SECRET,
     encKeyBase64
   );
-  log(`BAO_KV_ENCRYPTION_KEY set on ${authWorkerName}.`);
-  await setWorkerSecret(
-    accountId,
-    apiToken,
+  log(`${WORKER_ENCRYPTION_SECRET} set on ${authWorkerName}.`);
+  await cf.setWorkerSecret(
     rotationWorkerName,
-    "BAO_KV_ENCRYPTION_KEY",
+    WORKER_ENCRYPTION_SECRET,
     encKeyBase64
   );
-  log(`BAO_KV_ENCRYPTION_KEY set on ${rotationWorkerName}.`);
+  log(`${WORKER_ENCRYPTION_SECRET} set on ${rotationWorkerName}.`);
   log("Bootstrap complete.");
 }
 
@@ -1533,7 +1551,7 @@ var ConfigError = class extends Error {
   }
 };
 
-// src/logger.ts
+// src/lib/logger.ts
 async function setupLogger() {
   await configure({
     sinks: { console: getConsoleSink() },
@@ -1549,14 +1567,10 @@ void (async () => {
   await setupLogger();
   const logger = getLogger(["bao", "action", "bootstrap-secrets"]);
   try {
-    await bootstrapSecrets(
-      process.env,
-      (msg) => logger.info("{msg}", { msg }),
-      (msg) => logger.error("{msg}", { msg }),
-      process.exit
-    );
+    await bootstrapSecrets(process.env, (msg) => logger.info("{msg}", { msg }));
   } catch (err) {
     logger.fatal("::error::{message}", { message: err.message });
     process.exit(1);
   }
 })();
+//# sourceMappingURL=bootstrap-secrets.js.map

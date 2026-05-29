@@ -4,9 +4,9 @@ author: "getbao"
 
 inputs:
   environment:
-    description: "Deployment environment (dev or production)"
+    description: "Deployment environment label (e.g. sandbox, production)"
     required: false
-    default: "dev"
+    default: "sandbox"
   api_token:
     description: "Cloudflare API Token with Workers edit permissions"
     required: true
@@ -96,7 +96,7 @@ runs:
       shell: bash
       working-directory: ${{ github.workspace }}/.bao-assets/tf
       run: |
-        APP_NAME=$(node -e "process.stdout.write(require('$GITHUB_WORKSPACE/bao.config.json').appName ?? 'getbao')")
+        APP_NAME=$(node -e "try { process.stdout.write(require('$GITHUB_WORKSPACE/bao.config.json').appName || 'getbao') } catch(e) { process.stdout.write('getbao') }")
         tofu apply -auto-approve \
           -var="account_id=${{ inputs.account_id }}" \
           -var="api_token=${{ inputs.api_token }}" \
@@ -111,14 +111,19 @@ runs:
       id: tofu-outputs
       shell: bash
       working-directory: ${{ github.workspace }}/.bao-assets/tf
-      run: |
-        JSON=$(tofu output -json)
-        DB_ID=$(echo "$JSON"   | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).d1_database_id.value))")
-        DB_NAME=$(echo "$JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).d1_database_name.value))")
-        KV_ID=$(echo "$JSON"   | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).kv_namespace_id.value))")
-        echo "db_id=$DB_ID"     >> "$GITHUB_OUTPUT"
-        echo "db_name=$DB_NAME" >> "$GITHUB_OUTPUT"
-        echo "kv_id=$KV_ID"     >> "$GITHUB_OUTPUT"
+      run: tofu output -json | node "${{ github.action_path }}/dist/parse-tofu-outputs.js"
+
+    # ── Generate wrangler.json ─────────────────────────────────────────────
+    - name: Generate wrangler.json
+      id: gen-config
+      shell: bash
+      run: node "${{ github.action_path }}/dist/generate-config.js"
+      env:
+        DEPLOY_ENV: ${{ inputs.environment }}
+        TOFU_DB_ID: ${{ steps.tofu-outputs.outputs.db_id }}
+        TOFU_DB_NAME: ${{ steps.tofu-outputs.outputs.db_name }}
+        TOFU_KV_ID: ${{ steps.tofu-outputs.outputs.kv_id }}
+        ASSETS_DIR: ${{ github.workspace }}/.bao-assets
 
     # ── Commit state + open PR ─────────────────────────────────────────────
     - name: Create pull request for state update
@@ -136,18 +141,6 @@ runs:
 
           **App:** `${{ steps.gen-config.outputs.app_name }}`
           **D1 database ID:** `${{ steps.tofu-outputs.outputs.db_id }}`
-
-    # ── Generate wrangler.json ─────────────────────────────────────────────
-    - name: Generate wrangler.json
-      id: gen-config
-      shell: bash
-      run: node "${{ github.action_path }}/dist/generate-config.js"
-      env:
-        DEPLOY_ENV: ${{ inputs.environment }}
-        TOFU_DB_ID: ${{ steps.tofu-outputs.outputs.db_id }}
-        TOFU_DB_NAME: ${{ steps.tofu-outputs.outputs.db_name }}
-        TOFU_KV_ID: ${{ steps.tofu-outputs.outputs.kv_id }}
-        ASSETS_DIR: ${{ github.workspace }}/.bao-assets
 
     # ── Parse App Secrets ──────────────────────────────────────────────────
     - name: Parse app secrets

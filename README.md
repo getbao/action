@@ -45,16 +45,15 @@ jobs:
 
 ## Inputs
 
-| Input          | Required | Default                  | Description                                                                 |
-| -------------- | -------- | ------------------------ | --------------------------------------------------------------------------- |
-| `license_key`  | ✅       | —                        | getbao license key                                                          |
-| `api_token`    | ✅       | —                        | Cloudflare API token with Workers edit permissions                          |
-| `account_id`   | ✅       | —                        | Cloudflare account ID                                                       |
-| `github_token` | ✅       | —                        | GitHub token used to open the OpenTofu state pull request                   |
-| `environment`  |          | `dev`                    | Deployment environment (`dev` or `production`)                              |
-| `app_secrets`  |          | `{}`                     | JSON string of secrets to set on the worker (e.g. `${{ toJson(secrets) }}`) |
-| `force_rotate` |          | `false`                  | Regenerate `BETTER_AUTH_SECRETS` from scratch — signs all users out         |
-| `api_url`      |          | `https://api.getbao.dev` | Override the getbao API base URL                                            |
+| Input          | Required | Default   | Description                                                                 |
+| -------------- | -------- | --------- | --------------------------------------------------------------------------- |
+| `license_key`  | ✅       | —         | getbao license key                                                          |
+| `api_token`    | ✅       | —         | Cloudflare API token with Workers edit permissions                          |
+| `account_id`   | ✅       | —         | Cloudflare account ID                                                       |
+| `github_token` | ✅       | —         | GitHub token used to open the OpenTofu state pull request                   |
+| `environment`  |          | `sandbox` | Deployment environment label (e.g. `sandbox`, `production`)                 |
+| `app_secrets`  |          | `{}`      | JSON string of secrets to set on the worker (e.g. `${{ toJson(secrets) }}`) |
+| `force_rotate` |          | `false`   | Regenerate `BETTER_AUTH_SECRETS` from scratch — signs all users out         |
 
 ## Outputs
 
@@ -69,7 +68,7 @@ Use a [GitHub environment](https://docs.github.com/en/actions/deployment/targeti
 
 ```yaml
 jobs:
-  deploy-dev:
+  deploy-sandbox:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -78,14 +77,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: getbao/deploy-action@v1
         with:
-          environment: dev
+          environment: sandbox
           license_key: ${{ secrets.GETBAO_LICENSE_KEY }}
           api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-prod:
-    needs: deploy-dev
+    needs: deploy-sandbox
     runs-on: ubuntu-latest
     environment: production
     permissions:

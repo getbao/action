@@ -1416,6 +1416,36 @@ var ConfigError = class extends Error {
   }
 };
 
+// src/lib/assert-https-url.ts
+function assertHttpsUrl(url, label) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`${label} is not a valid URL: ${url}`);
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error(`${label} must use HTTPS, got: ${parsed.protocol}`);
+  }
+}
+
+// src/lib/retry.ts
+async function withRetry(fn, maxAttempts = 3, baseDelayMs = 500) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        const delay = baseDelayMs * 2 ** (attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // src/download-assets.ts
 var ASSETS = [
   "manifest.json",
@@ -1448,30 +1478,47 @@ async function downloadAssets(env) {
     VERSION: version,
     ASSETS_DIR: assetsDir
   } = env;
+  assertHttpsUrl(apiUrl, "BAO_API_URL");
   await (0, import_promises.mkdir)(assetsDir, { recursive: true });
-  for (const asset of ASSETS) {
-    logger.info("Downloading {asset}...", { asset });
-    const apiRes = await fetch(`${apiUrl}/v1/releases/${version}/${asset}`, {
-      headers: { Authorization: `Bearer ${apiKey}` }
-    });
-    if (!apiRes.ok) {
-      throw new Error(
-        `API request failed for ${asset}: ${apiRes.status} ${await apiRes.text()}`
-      );
-    }
-    const { url: presignedUrl } = await apiRes.json();
-    const downloadRes = await fetch(presignedUrl);
-    if (!downloadRes.ok) {
-      throw new Error(`Download failed for ${asset}: ${downloadRes.status}`);
-    }
-    await (0, import_promises.writeFile)(
-      (0, import_node_path.join)(assetsDir, asset),
-      Buffer.from(await downloadRes.arrayBuffer())
-    );
-  }
+  await Promise.all(
+    ASSETS.map((asset) => {
+      logger.info("Downloading {asset}...", { asset });
+      return withRetry(async () => {
+        const apiRes = await fetch(
+          `${apiUrl}/v1/releases/${version}/${asset}`,
+          {
+            headers: { Authorization: `Bearer ${apiKey}` },
+            signal: AbortSignal.timeout(3e4)
+          }
+        );
+        if (!apiRes.ok) {
+          throw new Error(`API request failed for ${asset}: ${apiRes.status}`);
+        }
+        const { url: presignedUrl } = await apiRes.json();
+        assertHttpsUrl(presignedUrl, "presigned URL");
+        const downloadRes = await fetch(presignedUrl, {
+          signal: AbortSignal.timeout(6e4)
+        });
+        if (!downloadRes.ok) {
+          throw new Error(
+            `Download failed for ${asset}: ${downloadRes.status}`
+          );
+        }
+        await (0, import_promises.writeFile)(
+          (0, import_node_path.join)(assetsDir, asset),
+          Buffer.from(await downloadRes.arrayBuffer())
+        );
+      });
+    })
+  );
   logger.info("Verifying asset integrity...");
   const manifestRaw = await (0, import_promises.readFile)((0, import_node_path.join)(assetsDir, "manifest.json"), "utf-8");
-  const manifest = JSON.parse(manifestRaw);
+  let manifest;
+  try {
+    manifest = JSON.parse(manifestRaw);
+  } catch (err) {
+    throw new Error(`Failed to parse manifest.json: ${err.message}`);
+  }
   for (const asset of VERIFY_ASSETS) {
     const content = await (0, import_promises.readFile)((0, import_node_path.join)(assetsDir, asset));
     const actual = (0, import_node_crypto.createHash)("sha256").update(content).digest("hex");
@@ -1482,6 +1529,12 @@ async function downloadAssets(env) {
       );
     }
     logger.info("  {asset} \u2713", { asset });
+  }
+  const whichResult = (0, import_node_child_process.spawnSync)("which", ["unzip"]);
+  if (whichResult.status !== 0) {
+    throw new Error(
+      "unzip binary not found. Install it with: apt-get install unzip (Ubuntu) or brew install unzip (macOS)"
+    );
   }
   for (const [archive, subdir] of EXTRACT) {
     logger.info("Extracting {archive}...", { archive });
@@ -1500,7 +1553,7 @@ async function downloadAssets(env) {
   logger.info("Assets extracted.");
 }
 
-// src/logger.ts
+// src/lib/logger.ts
 async function setupLogger() {
   await configure({
     sinks: { console: getConsoleSink() },
@@ -1522,3 +1575,4 @@ void (async () => {
     process.exit(1);
   }
 })();
+//# sourceMappingURL=download-assets.js.map

@@ -1006,9 +1006,9 @@ var init_string = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/@better-auth+kysely-adapter@1.5.5_@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@bet_c4a9b52d7300c01f822af425a6c1cc16/node_modules/@better-auth/kysely-adapter/dist/index.mjs
+// ../../node_modules/.pnpm/@better-auth+kysely-adapter@1.5.5_@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@bet_9eb990e5e03f98fddd490b6dc7da33e4/node_modules/@better-auth/kysely-adapter/dist/index.mjs
 var init_dist = __esm({
-  "../../node_modules/.pnpm/@better-auth+kysely-adapter@1.5.5_@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@bet_c4a9b52d7300c01f822af425a6c1cc16/node_modules/@better-auth/kysely-adapter/dist/index.mjs"() {
+  "../../node_modules/.pnpm/@better-auth+kysely-adapter@1.5.5_@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@bet_9eb990e5e03f98fddd490b6dc7da33e4/node_modules/@better-auth/kysely-adapter/dist/index.mjs"() {
     init_adapter();
     init_string();
   }
@@ -1794,7 +1794,7 @@ var require_dist = __commonJS({
 });
 
 // src/generate-config.ts
-var import_node_fs = __toESM(require("node:fs"), 1);
+var import_node_fs3 = __toESM(require("node:fs"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
 
 // ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/index.js
@@ -15913,8 +15913,8 @@ var LoggerImpl = class LoggerImpl2 {
   */
   resetDescendants() {
     for (const child of Object.values(this.children)) {
-      const logger3 = child instanceof LoggerImpl2 ? child : child.deref();
-      if (logger3 != null) logger3.resetDescendants();
+      const logger4 = child instanceof LoggerImpl2 ? child : child.deref();
+      if (logger4 != null) logger4.resetDescendants();
     }
     this.reset();
   }
@@ -16228,8 +16228,8 @@ var LoggerImpl = class LoggerImpl2 {
 var LoggerCtx = class LoggerCtx2 {
   logger;
   properties;
-  constructor(logger3, properties) {
-    this.logger = logger3;
+  constructor(logger4, properties) {
+    this.logger = logger4;
     this.properties = properties;
   }
   get category() {
@@ -17120,20 +17120,20 @@ function configureInternal(config2, allowAsync) {
     const categoryKey = Array.isArray(cfg.category) ? JSON.stringify(cfg.category) : JSON.stringify([cfg.category]);
     if (configuredCategories.has(categoryKey)) throw new ConfigError(`Duplicate logger configuration for category: ${categoryKey}. Each category can only be configured once.`);
     configuredCategories.add(categoryKey);
-    const logger3 = LoggerImpl.getLogger(cfg.category);
+    const logger4 = LoggerImpl.getLogger(cfg.category);
     for (const sinkId of cfg.sinks ?? []) {
       const sink = config2.sinks[sinkId];
       if (!sink) throw new ConfigError(`Sink not found: ${sinkId}.`);
-      logger3.sinks.push(sink);
+      logger4.sinks.push(sink);
     }
-    logger3.parentSinks = cfg.parentSinks ?? "inherit";
-    if (cfg.lowestLevel !== void 0) logger3.lowestLevel = cfg.lowestLevel;
+    logger4.parentSinks = cfg.parentSinks ?? "inherit";
+    if (cfg.lowestLevel !== void 0) logger4.lowestLevel = cfg.lowestLevel;
     for (const filterId of cfg.filters ?? []) {
       const filter = config2.filters?.[filterId];
       if (filter === void 0) throw new ConfigError(`Filter not found: ${filterId}.`);
-      logger3.filters.push(toFilter(filter));
+      logger4.filters.push(toFilter(filter));
     }
-    strongRefs.add(logger3);
+    strongRefs.add(logger4);
   }
   LoggerImpl.getLogger().contextLocalStorage = config2.contextLocalStorage;
   for (const sink of Object.values(config2.sinks)) {
@@ -22091,7 +22091,7 @@ function joinChunks(chunks) {
     return getChunkIndex(a) - getChunkIndex(b);
   }).map((key) => chunks[key]).join("");
 }
-function chunkCookie(storeName, cookie, chunks, logger3) {
+function chunkCookie(storeName, cookie, chunks, logger4) {
   const chunkCount = Math.ceil(cookie.value.length / CHUNK_SIZE);
   if (chunkCount === 1) {
     chunks[cookie.name] = cookie.value;
@@ -22109,7 +22109,7 @@ function chunkCookie(storeName, cookie, chunks, logger3) {
     });
     chunks[name] = value;
   }
-  logger3.debug(`CHUNKING_${storeName.toUpperCase()}_COOKIE`, {
+  logger4.debug(`CHUNKING_${storeName.toUpperCase()}_COOKIE`, {
     message: `${storeName} cookie exceeds allowed ${ALLOWED_COOKIE_SIZE} bytes.`,
     emptyCookieSize: ESTIMATED_EMPTY_COOKIE_SIZE,
     valueSize: cookie.value.length,
@@ -22132,7 +22132,7 @@ function getCleanCookies(chunks, cookieOptions) {
 }
 var storeFactory = (storeName) => (cookieName, cookieOptions, ctx) => {
   const chunks = readExistingChunks(cookieName, ctx);
-  const logger3 = ctx.context.logger;
+  const logger4 = ctx.context.logger;
   return {
     getValue() {
       return joinChunks(chunks);
@@ -22151,7 +22151,7 @@ var storeFactory = (storeName) => (cookieName, cookieOptions, ctx) => {
           ...cookieOptions,
           ...options
         }
-      }, chunks, logger3);
+      }, chunks, logger4);
       for (const chunk of chunked) cookies[chunk.name] = chunk;
       return Object.values(cookies);
     },
@@ -23293,11 +23293,11 @@ function createAuthEndpoint(pathOrOptions, handlerOrOptions, handlerOrNever) {
 }
 
 // ../../node_modules/.pnpm/@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@better-fetch+fetch@1.1.21_@cloudflare_0a594f69fe464e81386a94def577d36a/node_modules/@better-auth/core/dist/utils/deprecate.mjs
-function deprecate(fn, message2, logger3) {
+function deprecate(fn, message2, logger4) {
   let warned = false;
   return function(...args) {
     if (!warned) {
-      (logger3?.warn ?? console.warn)(`[Deprecation] ${message2}`);
+      (logger4?.warn ?? console.warn)(`[Deprecation] ${message2}`);
       warned = true;
     }
     return fn.apply(this, args);
@@ -23777,7 +23777,7 @@ function getTTLSeconds(expiresAt, now2 = Date.now()) {
   return Math.max(Math.floor((expiresMs - now2) / 1e3), 0);
 }
 var createInternalAdapter = (adapter, ctx) => {
-  const logger3 = ctx.logger;
+  const logger4 = ctx.logger;
   const options = ctx.options;
   const secondaryStorage = options.secondaryStorage;
   const sessionExpiration = options.session?.expiresIn || 3600 * 24 * 7;
@@ -24091,7 +24091,7 @@ var createInternalAdapter = (adapter, ctx) => {
         if (data) {
           const { session } = safeJSONParse(data) ?? {};
           if (!session) {
-            logger3.error("Session not found in secondary storage");
+            logger4.error("Session not found in secondary storage");
             return;
           }
           const userId = session.userId;
@@ -24103,7 +24103,7 @@ var createInternalAdapter = (adapter, ctx) => {
             const furthestSessionExp = filtered.sort((a, b) => a.expiresAt - b.expiresAt).at(-1)?.expiresAt;
             if (filtered.length > 0 && furthestSessionExp && furthestSessionExp > Date.now()) await secondaryStorage.set(`active-sessions-${userId}`, JSON.stringify(filtered), getTTLSeconds(furthestSessionExp, now2));
             else await secondaryStorage.delete(`active-sessions-${userId}`);
-          } else logger3.error("Active sessions list not found in secondary storage");
+          } else logger4.error("Active sessions list not found in secondary storage");
         }
         await secondaryStorage.delete(token);
         if (!options.session?.storeSessionInDatabase || ctx.options.session?.preserveSessionInDatabase) return;
@@ -30525,7 +30525,7 @@ init_env();
 init_error2();
 init_id();
 
-// ../../node_modules/.pnpm/@better-auth+telemetry@1.5.5_@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@better-f_ef5f9e074fbb5c95228832903baa8cb0/node_modules/@better-auth/telemetry/dist/node.mjs
+// ../../node_modules/.pnpm/@better-auth+telemetry@1.5.5_@better-auth+core@1.5.5_@better-auth+utils@0.3.1_@better-f_cd49346402d1e9e566e5971c36ca3ffc/node_modules/@better-auth/telemetry/dist/node.mjs
 init_env();
 init_random();
 
@@ -38367,7 +38367,7 @@ var WebhookSubscriptionPastDuePayload$outboundSchema = object2({
   data: Subscription$outboundSchema
 });
 
-// ../../node_modules/.pnpm/@polar-sh+better-auth@1.8.3_@polar-sh+sdk@0.46.6_@stripe+react-stripe-js@4.0.2_@stripe+_ba895a940fe255fb8535ce513a24564c/node_modules/@polar-sh/better-auth/dist/index.js
+// ../../node_modules/.pnpm/@polar-sh+better-auth@1.8.3_@polar-sh+sdk@0.46.6_@stripe+react-stripe-js@4.0.2_@stripe+_a98e703c0bcd2fd42701745baba7a0a8/node_modules/@polar-sh/better-auth/dist/index.js
 var CheckoutParams = external_exports.object({
   products: external_exports.union([external_exports.array(external_exports.string()), external_exports.string()]).optional(),
   slug: external_exports.string().optional(),
@@ -49461,8 +49461,9 @@ var s2 = external_exports.object({ enabled: external_exports.boolean().default(f
 var c = external_exports.object({ origins: external_exports.array(external_exports.string()).default([]) });
 var l = external_exports.object({ appName: external_exports.string().min(1).default(`getbao`), mailer: o.optional(), auth: external_exports.object({ baseURL: external_exports.string().url().optional(), basePath: external_exports.string().default(`/api/auth`), plugins: external_exports.object({ password: n2.optional(), organization: t3.optional(), otp: t4.optional(), jwks: t2.optional(), polar: n3.optional() }), social: external_exports.object({ github: s2.optional(), google: s2.optional() }).optional() }), cors: c });
 
-// src/generate-config.ts
-var logger2 = getLogger(["bao", "action", "generate-config"]);
+// src/lib/github-output.ts
+var import_node_fs = __toESM(require("node:fs"), 1);
+var logger2 = getLogger(["bao", "action", "github-output"]);
 function setOutput(name, value) {
   const outputFile = process.env.GITHUB_OUTPUT;
   if (outputFile) {
@@ -49472,8 +49473,495 @@ function setOutput(name, value) {
     logger2.debug("::set-output name={name}::{value}", { name, value });
   }
 }
+
+// src/lib/template-renderer.ts
+var import_node_fs2 = __toESM(require("node:fs"), 1);
+
+// ../../node_modules/.pnpm/mustache@4.2.0/node_modules/mustache/mustache.mjs
+var objectToString = Object.prototype.toString;
+var isArray = Array.isArray || function isArrayPolyfill(object3) {
+  return objectToString.call(object3) === "[object Array]";
+};
+function isFunction2(object3) {
+  return typeof object3 === "function";
+}
+function typeStr(obj) {
+  return isArray(obj) ? "array" : typeof obj;
+}
+function escapeRegExp(string6) {
+  return string6.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
+}
+function hasProperty(obj, propName) {
+  return obj != null && typeof obj === "object" && propName in obj;
+}
+function primitiveHasOwnProperty(primitive, propName) {
+  return primitive != null && typeof primitive !== "object" && primitive.hasOwnProperty && primitive.hasOwnProperty(propName);
+}
+var regExpTest = RegExp.prototype.test;
+function testRegExp(re, string6) {
+  return regExpTest.call(re, string6);
+}
+var nonSpaceRe = /\S/;
+function isWhitespace(string6) {
+  return !testRegExp(nonSpaceRe, string6);
+}
+var entityMap = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+  "/": "&#x2F;",
+  "`": "&#x60;",
+  "=": "&#x3D;"
+};
+function escapeHtml(string6) {
+  return String(string6).replace(/[&<>"'`=\/]/g, function fromEntityMap(s3) {
+    return entityMap[s3];
+  });
+}
+var whiteRe = /\s*/;
+var spaceRe = /\s+/;
+var equalsRe = /\s*=/;
+var curlyRe = /\s*\}/;
+var tagRe = /#|\^|\/|>|\{|&|=|!/;
+function parseTemplate(template, tags) {
+  if (!template)
+    return [];
+  var lineHasNonSpace = false;
+  var sections = [];
+  var tokens = [];
+  var spaces = [];
+  var hasTag = false;
+  var nonSpace = false;
+  var indentation = "";
+  var tagIndex = 0;
+  function stripSpace() {
+    if (hasTag && !nonSpace) {
+      while (spaces.length)
+        delete tokens[spaces.pop()];
+    } else {
+      spaces = [];
+    }
+    hasTag = false;
+    nonSpace = false;
+  }
+  var openingTagRe, closingTagRe, closingCurlyRe;
+  function compileTags(tagsToCompile) {
+    if (typeof tagsToCompile === "string")
+      tagsToCompile = tagsToCompile.split(spaceRe, 2);
+    if (!isArray(tagsToCompile) || tagsToCompile.length !== 2)
+      throw new Error("Invalid tags: " + tagsToCompile);
+    openingTagRe = new RegExp(escapeRegExp(tagsToCompile[0]) + "\\s*");
+    closingTagRe = new RegExp("\\s*" + escapeRegExp(tagsToCompile[1]));
+    closingCurlyRe = new RegExp("\\s*" + escapeRegExp("}" + tagsToCompile[1]));
+  }
+  compileTags(tags || mustache.tags);
+  var scanner = new Scanner(template);
+  var start, type, value, chr, token, openSection;
+  while (!scanner.eos()) {
+    start = scanner.pos;
+    value = scanner.scanUntil(openingTagRe);
+    if (value) {
+      for (var i = 0, valueLength = value.length; i < valueLength; ++i) {
+        chr = value.charAt(i);
+        if (isWhitespace(chr)) {
+          spaces.push(tokens.length);
+          indentation += chr;
+        } else {
+          nonSpace = true;
+          lineHasNonSpace = true;
+          indentation += " ";
+        }
+        tokens.push(["text", chr, start, start + 1]);
+        start += 1;
+        if (chr === "\n") {
+          stripSpace();
+          indentation = "";
+          tagIndex = 0;
+          lineHasNonSpace = false;
+        }
+      }
+    }
+    if (!scanner.scan(openingTagRe))
+      break;
+    hasTag = true;
+    type = scanner.scan(tagRe) || "name";
+    scanner.scan(whiteRe);
+    if (type === "=") {
+      value = scanner.scanUntil(equalsRe);
+      scanner.scan(equalsRe);
+      scanner.scanUntil(closingTagRe);
+    } else if (type === "{") {
+      value = scanner.scanUntil(closingCurlyRe);
+      scanner.scan(curlyRe);
+      scanner.scanUntil(closingTagRe);
+      type = "&";
+    } else {
+      value = scanner.scanUntil(closingTagRe);
+    }
+    if (!scanner.scan(closingTagRe))
+      throw new Error("Unclosed tag at " + scanner.pos);
+    if (type == ">") {
+      token = [type, value, start, scanner.pos, indentation, tagIndex, lineHasNonSpace];
+    } else {
+      token = [type, value, start, scanner.pos];
+    }
+    tagIndex++;
+    tokens.push(token);
+    if (type === "#" || type === "^") {
+      sections.push(token);
+    } else if (type === "/") {
+      openSection = sections.pop();
+      if (!openSection)
+        throw new Error('Unopened section "' + value + '" at ' + start);
+      if (openSection[1] !== value)
+        throw new Error('Unclosed section "' + openSection[1] + '" at ' + start);
+    } else if (type === "name" || type === "{" || type === "&") {
+      nonSpace = true;
+    } else if (type === "=") {
+      compileTags(value);
+    }
+  }
+  stripSpace();
+  openSection = sections.pop();
+  if (openSection)
+    throw new Error('Unclosed section "' + openSection[1] + '" at ' + scanner.pos);
+  return nestTokens(squashTokens(tokens));
+}
+function squashTokens(tokens) {
+  var squashedTokens = [];
+  var token, lastToken;
+  for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+    token = tokens[i];
+    if (token) {
+      if (token[0] === "text" && lastToken && lastToken[0] === "text") {
+        lastToken[1] += token[1];
+        lastToken[3] = token[3];
+      } else {
+        squashedTokens.push(token);
+        lastToken = token;
+      }
+    }
+  }
+  return squashedTokens;
+}
+function nestTokens(tokens) {
+  var nestedTokens = [];
+  var collector = nestedTokens;
+  var sections = [];
+  var token, section;
+  for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+    token = tokens[i];
+    switch (token[0]) {
+      case "#":
+      case "^":
+        collector.push(token);
+        sections.push(token);
+        collector = token[4] = [];
+        break;
+      case "/":
+        section = sections.pop();
+        section[5] = token[2];
+        collector = sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
+        break;
+      default:
+        collector.push(token);
+    }
+  }
+  return nestedTokens;
+}
+function Scanner(string6) {
+  this.string = string6;
+  this.tail = string6;
+  this.pos = 0;
+}
+Scanner.prototype.eos = function eos() {
+  return this.tail === "";
+};
+Scanner.prototype.scan = function scan(re) {
+  var match2 = this.tail.match(re);
+  if (!match2 || match2.index !== 0)
+    return "";
+  var string6 = match2[0];
+  this.tail = this.tail.substring(string6.length);
+  this.pos += string6.length;
+  return string6;
+};
+Scanner.prototype.scanUntil = function scanUntil(re) {
+  var index = this.tail.search(re), match2;
+  switch (index) {
+    case -1:
+      match2 = this.tail;
+      this.tail = "";
+      break;
+    case 0:
+      match2 = "";
+      break;
+    default:
+      match2 = this.tail.substring(0, index);
+      this.tail = this.tail.substring(index);
+  }
+  this.pos += match2.length;
+  return match2;
+};
+function Context(view, parentContext) {
+  this.view = view;
+  this.cache = { ".": this.view };
+  this.parent = parentContext;
+}
+Context.prototype.push = function push(view) {
+  return new Context(view, this);
+};
+Context.prototype.lookup = function lookup(name) {
+  var cache3 = this.cache;
+  var value;
+  if (cache3.hasOwnProperty(name)) {
+    value = cache3[name];
+  } else {
+    var context = this, intermediateValue, names, index, lookupHit = false;
+    while (context) {
+      if (name.indexOf(".") > 0) {
+        intermediateValue = context.view;
+        names = name.split(".");
+        index = 0;
+        while (intermediateValue != null && index < names.length) {
+          if (index === names.length - 1)
+            lookupHit = hasProperty(intermediateValue, names[index]) || primitiveHasOwnProperty(intermediateValue, names[index]);
+          intermediateValue = intermediateValue[names[index++]];
+        }
+      } else {
+        intermediateValue = context.view[name];
+        lookupHit = hasProperty(context.view, name);
+      }
+      if (lookupHit) {
+        value = intermediateValue;
+        break;
+      }
+      context = context.parent;
+    }
+    cache3[name] = value;
+  }
+  if (isFunction2(value))
+    value = value.call(this.view);
+  return value;
+};
+function Writer() {
+  this.templateCache = {
+    _cache: {},
+    set: function set2(key, value) {
+      this._cache[key] = value;
+    },
+    get: function get(key) {
+      return this._cache[key];
+    },
+    clear: function clear() {
+      this._cache = {};
+    }
+  };
+}
+Writer.prototype.clearCache = function clearCache() {
+  if (typeof this.templateCache !== "undefined") {
+    this.templateCache.clear();
+  }
+};
+Writer.prototype.parse = function parse4(template, tags) {
+  var cache3 = this.templateCache;
+  var cacheKey = template + ":" + (tags || mustache.tags).join(":");
+  var isCacheEnabled = typeof cache3 !== "undefined";
+  var tokens = isCacheEnabled ? cache3.get(cacheKey) : void 0;
+  if (tokens == void 0) {
+    tokens = parseTemplate(template, tags);
+    isCacheEnabled && cache3.set(cacheKey, tokens);
+  }
+  return tokens;
+};
+Writer.prototype.render = function render(template, view, partials, config2) {
+  var tags = this.getConfigTags(config2);
+  var tokens = this.parse(template, tags);
+  var context = view instanceof Context ? view : new Context(view, void 0);
+  return this.renderTokens(tokens, context, partials, template, config2);
+};
+Writer.prototype.renderTokens = function renderTokens(tokens, context, partials, originalTemplate, config2) {
+  var buffer = "";
+  var token, symbol3, value;
+  for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+    value = void 0;
+    token = tokens[i];
+    symbol3 = token[0];
+    if (symbol3 === "#") value = this.renderSection(token, context, partials, originalTemplate, config2);
+    else if (symbol3 === "^") value = this.renderInverted(token, context, partials, originalTemplate, config2);
+    else if (symbol3 === ">") value = this.renderPartial(token, context, partials, config2);
+    else if (symbol3 === "&") value = this.unescapedValue(token, context);
+    else if (symbol3 === "name") value = this.escapedValue(token, context, config2);
+    else if (symbol3 === "text") value = this.rawValue(token);
+    if (value !== void 0)
+      buffer += value;
+  }
+  return buffer;
+};
+Writer.prototype.renderSection = function renderSection(token, context, partials, originalTemplate, config2) {
+  var self = this;
+  var buffer = "";
+  var value = context.lookup(token[1]);
+  function subRender(template) {
+    return self.render(template, context, partials, config2);
+  }
+  if (!value) return;
+  if (isArray(value)) {
+    for (var j = 0, valueLength = value.length; j < valueLength; ++j) {
+      buffer += this.renderTokens(token[4], context.push(value[j]), partials, originalTemplate, config2);
+    }
+  } else if (typeof value === "object" || typeof value === "string" || typeof value === "number") {
+    buffer += this.renderTokens(token[4], context.push(value), partials, originalTemplate, config2);
+  } else if (isFunction2(value)) {
+    if (typeof originalTemplate !== "string")
+      throw new Error("Cannot use higher-order sections without the original template");
+    value = value.call(context.view, originalTemplate.slice(token[3], token[5]), subRender);
+    if (value != null)
+      buffer += value;
+  } else {
+    buffer += this.renderTokens(token[4], context, partials, originalTemplate, config2);
+  }
+  return buffer;
+};
+Writer.prototype.renderInverted = function renderInverted(token, context, partials, originalTemplate, config2) {
+  var value = context.lookup(token[1]);
+  if (!value || isArray(value) && value.length === 0)
+    return this.renderTokens(token[4], context, partials, originalTemplate, config2);
+};
+Writer.prototype.indentPartial = function indentPartial(partial2, indentation, lineHasNonSpace) {
+  var filteredIndentation = indentation.replace(/[^ \t]/g, "");
+  var partialByNl = partial2.split("\n");
+  for (var i = 0; i < partialByNl.length; i++) {
+    if (partialByNl[i].length && (i > 0 || !lineHasNonSpace)) {
+      partialByNl[i] = filteredIndentation + partialByNl[i];
+    }
+  }
+  return partialByNl.join("\n");
+};
+Writer.prototype.renderPartial = function renderPartial(token, context, partials, config2) {
+  if (!partials) return;
+  var tags = this.getConfigTags(config2);
+  var value = isFunction2(partials) ? partials(token[1]) : partials[token[1]];
+  if (value != null) {
+    var lineHasNonSpace = token[6];
+    var tagIndex = token[5];
+    var indentation = token[4];
+    var indentedValue = value;
+    if (tagIndex == 0 && indentation) {
+      indentedValue = this.indentPartial(value, indentation, lineHasNonSpace);
+    }
+    var tokens = this.parse(indentedValue, tags);
+    return this.renderTokens(tokens, context, partials, indentedValue, config2);
+  }
+};
+Writer.prototype.unescapedValue = function unescapedValue(token, context) {
+  var value = context.lookup(token[1]);
+  if (value != null)
+    return value;
+};
+Writer.prototype.escapedValue = function escapedValue(token, context, config2) {
+  var escape = this.getConfigEscape(config2) || mustache.escape;
+  var value = context.lookup(token[1]);
+  if (value != null)
+    return typeof value === "number" && escape === mustache.escape ? String(value) : escape(value);
+};
+Writer.prototype.rawValue = function rawValue(token) {
+  return token[1];
+};
+Writer.prototype.getConfigTags = function getConfigTags(config2) {
+  if (isArray(config2)) {
+    return config2;
+  } else if (config2 && typeof config2 === "object") {
+    return config2.tags;
+  } else {
+    return void 0;
+  }
+};
+Writer.prototype.getConfigEscape = function getConfigEscape(config2) {
+  if (config2 && typeof config2 === "object" && !isArray(config2)) {
+    return config2.escape;
+  } else {
+    return void 0;
+  }
+};
+var mustache = {
+  name: "mustache.js",
+  version: "4.2.0",
+  tags: ["{{", "}}"],
+  clearCache: void 0,
+  escape: void 0,
+  parse: void 0,
+  render: void 0,
+  Scanner: void 0,
+  Context: void 0,
+  Writer: void 0,
+  /**
+   * Allows a user to override the default caching strategy, by providing an
+   * object with set, get and clear methods. This can also be used to disable
+   * the cache by setting it to the literal `undefined`.
+   */
+  set templateCache(cache3) {
+    defaultWriter.templateCache = cache3;
+  },
+  /**
+   * Gets the default or overridden caching object from the default writer.
+   */
+  get templateCache() {
+    return defaultWriter.templateCache;
+  }
+};
+var defaultWriter = new Writer();
+mustache.clearCache = function clearCache2() {
+  return defaultWriter.clearCache();
+};
+mustache.parse = function parse5(template, tags) {
+  return defaultWriter.parse(template, tags);
+};
+mustache.render = function render2(template, view, partials, config2) {
+  if (typeof template !== "string") {
+    throw new TypeError('Invalid template! Template should be a "string" but "' + typeStr(template) + '" was given as the first argument for mustache#render(template, view, partials)');
+  }
+  return defaultWriter.render(template, view, partials, config2);
+};
+mustache.escape = escapeHtml;
+mustache.Scanner = Scanner;
+mustache.Context = Context;
+mustache.Writer = Writer;
+var mustache_default = mustache;
+
+// src/lib/template-renderer.ts
+function renderTemplate(templatePath, context) {
+  const source = import_node_fs2.default.readFileSync(templatePath, "utf-8");
+  return mustache_default.render(source, context);
+}
+function buildWranglerConfig(rendered, deployEnv, settings) {
+  const base = JSON.parse(rendered);
+  const envs = base.env;
+  const block = envs?.[deployEnv];
+  const vars = block?.vars;
+  if (!block || !vars) {
+    throw new Error(
+      `wrangler template is missing expected env.${deployEnv}.vars block`
+    );
+  }
+  return {
+    ...base,
+    env: {
+      ...envs,
+      [deployEnv]: {
+        ...block,
+        vars: { ...vars, SETTINGS: JSON.stringify(settings) }
+      }
+    }
+  };
+}
+
+// src/generate-config.ts
+var logger3 = getLogger(["bao", "action", "generate-config"]);
 function fail2(message2) {
-  logger2.fatal("::error::{message}", { message: message2 });
+  logger3.fatal("::error::{message}", { message: message2 });
   process.exit(1);
 }
 async function main() {
@@ -49481,7 +49969,7 @@ async function main() {
   const configPath = import_node_path.default.resolve(workDir, "bao.config.json");
   let rawConfig;
   try {
-    rawConfig = import_node_fs.default.readFileSync(configPath, "utf-8");
+    rawConfig = import_node_fs3.default.readFileSync(configPath, "utf-8");
   } catch (err) {
     const error49 = err;
     if (error49.code === "ENOENT") {
@@ -49502,7 +49990,7 @@ async function main() {
     );
   }
   const config2 = result.data;
-  const deployEnv = process.env.DEPLOY_ENV || "dev";
+  const deployEnv = process.env.DEPLOY_ENV || "sandbox";
   const dbId = process.env.TOFU_DB_ID ?? "";
   const kvId = process.env.TOFU_KV_ID ?? "";
   const assetsDir = process.env.ASSETS_DIR ?? import_node_path.default.resolve(workDir, ".bao-assets");
@@ -49513,60 +50001,36 @@ async function main() {
       "auth.baseURL is required in bao.config.json for production deployments."
     );
   }
-  const compatDate = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-  const envVars = {
-    ENVIRONMENT: deployEnv,
-    BETTER_AUTH_URL: config2.auth?.baseURL || "",
-    ROOT_DOMAIN: config2.auth?.baseURL ? new URL(config2.auth.baseURL).hostname : "",
-    APP_CONFIG: JSON.stringify(config2)
-  };
-  const envBlock = {
-    vars: envVars,
-    ...dbId && {
-      d1_databases: [
-        {
-          binding: "DB",
-          database_name: `bao_db_${deployEnv}`,
-          database_id: dbId,
-          migrations_dir: import_node_path.default.join(assetsDir, "migrations")
-        }
-      ]
-    },
-    ...kvId && {
-      kv_namespaces: [{ binding: "BAO_CONFIG", id: kvId }]
-    }
-  };
-  const wranglerConfig = {
+  const templatePath = import_node_path.default.join(assetsDir, "wrangler.template.mustache");
+  const rendered = renderTemplate(templatePath, {
     name: config2.appName,
-    main: workerFileName,
-    compatibility_date: compatDate,
-    compatibility_flags: ["nodejs_compat"],
-    env: { [deployEnv]: envBlock }
-  };
+    entrypoint: workerFileName,
+    env: deployEnv,
+    dbId,
+    kvId,
+    migrationsDir: import_node_path.default.join(assetsDir, "migrations")
+  });
+  const wranglerJson = buildWranglerConfig(rendered, deployEnv, config2);
   const wranglerConfigPath = import_node_path.default.resolve(workDir, "wrangler.json");
-  import_node_fs.default.writeFileSync(wranglerConfigPath, JSON.stringify(wranglerConfig, null, 2));
-  logger2.info("wrangler.json written to {path} with env [{env}]", {
+  import_node_fs3.default.writeFileSync(wranglerConfigPath, JSON.stringify(wranglerJson, null, 2));
+  logger3.info("wrangler.json written to {path} with env [{env}]", {
     path: wranglerConfigPath,
     env: deployEnv
   });
-  const rotationWorkerName = `${config2.appName}-rotation`;
-  const rotationConfig = {
-    name: rotationWorkerName,
-    main: rotationWorkerFileName,
-    compatibility_date: compatDate,
-    compatibility_flags: ["nodejs_compat"],
-    env: {
-      [deployEnv]: {
-        ...kvId && {
-          kv_namespaces: [{ binding: "BAO_CONFIG", id: kvId }]
-        },
-        triggers: { crons: ["0 0 1 */3 *"] }
-      }
-    }
-  };
+  const rotationWorkerName = `bao-${config2.appName}-rotation`;
+  const rotationTemplatePath = import_node_path.default.join(
+    assetsDir,
+    "wrangler-rotation.template.mustache"
+  );
+  const renderedRotation = renderTemplate(rotationTemplatePath, {
+    name: `${config2.appName}-rotation`,
+    entrypoint: rotationWorkerFileName,
+    env: deployEnv,
+    kvId
+  });
   const rotationConfigPath = import_node_path.default.resolve(workDir, "wrangler-rotation.json");
-  import_node_fs.default.writeFileSync(rotationConfigPath, JSON.stringify(rotationConfig, null, 2));
-  logger2.info("wrangler-rotation.json written to {path} with env [{env}]", {
+  import_node_fs3.default.writeFileSync(rotationConfigPath, renderedRotation);
+  logger3.info("wrangler-rotation.json written to {path} with env [{env}]", {
     path: rotationConfigPath,
     env: deployEnv
   });
@@ -49574,13 +50038,13 @@ async function main() {
   setOutput("rotation_worker_name", rotationWorkerName);
   setOutput("db_id", dbId);
   setOutput("base_url", config2.auth?.baseURL ?? "");
-  logger2.info("Config generated for app: {app} in env: {env}", {
+  logger3.info("Config generated for app: {app} in env: {env}", {
     app: config2.appName,
     env: deployEnv
   });
 }
 
-// src/logger.ts
+// src/lib/logger.ts
 async function setupLogger() {
   await configure({
     sinks: { console: getConsoleSink() },
@@ -49594,11 +50058,11 @@ async function setupLogger() {
 // entrypoints/generate-config.ts
 void (async () => {
   await setupLogger();
-  const logger3 = getLogger(["bao", "action", "generate-config"]);
+  const logger4 = getLogger(["bao", "action", "generate-config"]);
   try {
     await main();
   } catch (err) {
-    logger3.fatal("::error::{message}", { message: err.message });
+    logger4.fatal("::error::{message}", { message: err.message });
     process.exit(1);
   }
 })();
@@ -49609,4 +50073,11 @@ void (async () => {
 
 @noble/ciphers/utils.js:
   (*! noble-ciphers - MIT License (c) 2023 Paul Miller (paulmillr.com) *)
+
+mustache/mustache.mjs:
+  (*!
+   * mustache.js - Logic-less {{mustache}} templates with JavaScript
+   * http://github.com/janl/mustache.js
+   *)
 */
+//# sourceMappingURL=generate-config.js.map
