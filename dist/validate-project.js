@@ -26,12 +26,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// src/download-assets.ts
-var import_node_child_process = require("node:child_process");
-var import_node_crypto = require("node:crypto");
-var import_promises = require("node:fs/promises");
-var import_node_path = require("node:path");
-
 // ../../node_modules/.pnpm/@logtape+logtape@2.0.2/node_modules/@logtape/logtape/dist/filter.js
 function toFilter(filter) {
   if (typeof filter === "function") return filter;
@@ -1416,6 +1410,21 @@ var ConfigError = class extends Error {
   }
 };
 
+// src/lib/logger.ts
+async function setupLogger() {
+  await configure({
+    sinks: { console: getConsoleSink() },
+    loggers: [
+      { category: ["bao"], sinks: ["console"], lowestLevel: "info" },
+      { category: ["logtape", "meta"], sinks: [], lowestLevel: "fatal" }
+    ]
+  });
+}
+
+// src/validate-project.ts
+var import_node_fs = require("node:fs");
+var import_node_path = require("node:path");
+
 // src/lib/assert-https-url.ts
 function assertHttpsUrl(url, label) {
   let parsed;
@@ -1446,35 +1455,16 @@ async function withRetry(fn, maxAttempts = 3, baseDelayMs = 500) {
   throw lastError;
 }
 
-// src/download-assets.ts
-var ASSETS = [
-  "manifest.json",
-  "worker.js",
-  "rotation-worker.js",
-  "migrations.zip",
-  "tf.zip"
-];
-var VERIFY_ASSETS = [
-  "worker.js",
-  "rotation-worker.js",
-  "migrations.zip",
-  "tf.zip"
-];
-var EXTRACT = [
-  ["migrations.zip", "migrations"],
-  ["tf.zip", "tf"]
-];
+// src/validate-project.ts
 var REQUIRED_VARS = [
   "BAO_API_KEY",
   "BAO_API_URL",
-  "VERSION",
-  "ASSETS_DIR",
   "DEPLOY_ENV",
   "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
   "ACTIONS_ID_TOKEN_REQUEST_URL"
 ];
-async function downloadAssets(env) {
-  const logger = getLogger(["bao", "action", "download-assets"]);
+async function validateProject(env) {
+  const logger = getLogger(["bao", "action", "validate-project"]);
   const missing = REQUIRED_VARS.filter((k) => !env[k]);
   if (missing.length > 0) {
     throw new Error(
@@ -1484,13 +1474,19 @@ async function downloadAssets(env) {
   const {
     BAO_API_KEY: apiKey,
     BAO_API_URL: apiUrl,
-    VERSION: version,
-    ASSETS_DIR: assetsDir,
     DEPLOY_ENV: deployEnv,
     ACTIONS_ID_TOKEN_REQUEST_TOKEN: oidcRequestToken,
-    ACTIONS_ID_TOKEN_REQUEST_URL: oidcRequestUrl
+    ACTIONS_ID_TOKEN_REQUEST_URL: oidcRequestUrl,
+    GITHUB_REPOSITORY: repository = "",
+    GITHUB_WORKSPACE: githubWorkspace = ""
   } = env;
   assertHttpsUrl(apiUrl, "BAO_API_URL");
+  let projectName = "";
+  try {
+    const raw = (0, import_node_fs.readFileSync)((0, import_node_path.join)(githubWorkspace, "bao.config.json"), "utf-8");
+    projectName = JSON.parse(raw).appName ?? "";
+  } catch {
+  }
   const oidcRes = await fetch(`${oidcRequestUrl}&audience=getbao`, {
     headers: { Authorization: `Bearer ${oidcRequestToken}` }
   });
@@ -1498,109 +1494,43 @@ async function downloadAssets(env) {
     throw new Error(`Failed to fetch OIDC token: ${oidcRes.status}`);
   }
   const { value: oidcToken } = await oidcRes.json();
-  await (0, import_promises.mkdir)(assetsDir, { recursive: true });
-  let workerManifestKey = "worker.js";
-  await Promise.all(
-    ASSETS.map((asset) => {
-      logger.info("Downloading {asset}...", { asset });
-      return withRetry(async () => {
-        const apiRes = await fetch(
-          `${apiUrl}/v1/releases/${version}/${asset}`,
-          {
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "X-OIDC-Token": oidcToken,
-              "X-Deploy-Env": deployEnv
-            },
-            signal: AbortSignal.timeout(3e4)
-          }
-        );
-        if (!apiRes.ok) {
-          throw new Error(`API request failed for ${asset}: ${apiRes.status}`);
-        }
-        const { url: presignedUrl, workerKey } = await apiRes.json();
-        if (asset === "worker.js" && workerKey) {
-          workerManifestKey = workerKey;
-        }
-        assertHttpsUrl(presignedUrl, "presigned URL");
-        const downloadRes = await fetch(presignedUrl, {
-          signal: AbortSignal.timeout(6e4)
-        });
-        if (!downloadRes.ok) {
-          throw new Error(
-            `Download failed for ${asset}: ${downloadRes.status}`
-          );
-        }
-        await (0, import_promises.writeFile)(
-          (0, import_node_path.join)(assetsDir, asset),
-          Buffer.from(await downloadRes.arrayBuffer())
-        );
-      });
-    })
-  );
-  logger.info("Verifying asset integrity...");
-  const manifestRaw = await (0, import_promises.readFile)((0, import_node_path.join)(assetsDir, "manifest.json"), "utf-8");
-  let manifest;
-  try {
-    manifest = JSON.parse(manifestRaw);
-  } catch (err) {
-    throw new Error(`Failed to parse manifest.json: ${err.message}`);
-  }
-  for (const asset of VERIFY_ASSETS) {
-    const content = await (0, import_promises.readFile)((0, import_node_path.join)(assetsDir, asset));
-    const actual = (0, import_node_crypto.createHash)("sha256").update(content).digest("hex");
-    const manifestKey = asset === "worker.js" ? workerManifestKey : asset;
-    const expected = manifest.assets[manifestKey]?.sha256;
-    if (actual !== expected) {
-      throw new Error(
-        `Hash mismatch for ${asset}: expected ${expected}, got ${actual}`
-      );
+  await withRetry(async () => {
+    const res = await fetch(`${apiUrl}/v1/projects/validate`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "X-OIDC-Token": oidcToken
+      },
+      body: JSON.stringify({
+        environment: deployEnv,
+        repository,
+        project_name: projectName
+      }),
+      signal: AbortSignal.timeout(3e4)
+    });
+    if (!res.ok) {
+      let message = `Project validation failed: ${res.status}`;
+      try {
+        const body = await res.json();
+        if (body.message) message = body.message;
+      } catch {
+      }
+      throw new Error(message);
     }
-    logger.info("  {asset} \u2713", { asset });
-  }
-  const whichResult = (0, import_node_child_process.spawnSync)("which", ["unzip"]);
-  if (whichResult.status !== 0) {
-    throw new Error(
-      "unzip binary not found. Install it with: apt-get install unzip (Ubuntu) or brew install unzip (macOS)"
-    );
-  }
-  for (const [archive, subdir] of EXTRACT) {
-    logger.info("Extracting {archive}...", { archive });
-    const result = (0, import_node_child_process.spawnSync)("unzip", [
-      "-oq",
-      (0, import_node_path.join)(assetsDir, archive),
-      "-d",
-      (0, import_node_path.join)(assetsDir, subdir)
-    ]);
-    if (result.status !== 0) {
-      throw new Error(
-        `Failed to extract ${archive}: ${result.stderr?.toString() ?? "unknown error"}`
-      );
-    }
-  }
-  logger.info("Assets extracted.");
-}
-
-// src/lib/logger.ts
-async function setupLogger() {
-  await configure({
-    sinks: { console: getConsoleSink() },
-    loggers: [
-      { category: ["bao"], sinks: ["console"], lowestLevel: "info" },
-      { category: ["logtape", "meta"], sinks: [], lowestLevel: "fatal" }
-    ]
   });
+  logger.info("Project validated.");
 }
 
-// entrypoints/download-assets.ts
+// entrypoints/validate-project.ts
 void (async () => {
   await setupLogger();
-  const logger = getLogger(["bao", "action", "download-assets"]);
+  const logger = getLogger(["bao", "action", "validate-project"]);
   try {
-    await downloadAssets(process.env);
+    await validateProject(process.env);
   } catch (err) {
     logger.fatal("::error::{message}", { message: err.message });
     process.exit(1);
   }
 })();
-//# sourceMappingURL=download-assets.js.map
+//# sourceMappingURL=validate-project.js.map

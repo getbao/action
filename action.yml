@@ -53,6 +53,15 @@ runs:
       with:
         node-version: "22"
 
+    # ── Validate project (plan-based limits) ──────────────────────────────
+    - name: Validate project
+      shell: bash
+      run: node "${{ github.action_path }}/dist/validate-project.js"
+      env:
+        BAO_API_KEY: ${{ inputs.license_key }}
+        BAO_API_URL: ${{ inputs.api_url }}
+        DEPLOY_ENV: ${{ inputs.environment }}
+
     # ── Restore asset cache ────────────────────────────────────────────────
     - name: Restore asset cache
       id: asset-cache
@@ -71,6 +80,7 @@ runs:
         BAO_API_URL: ${{ inputs.api_url }}
         VERSION: ${{ inputs.version }}
         ASSETS_DIR: ${{ github.workspace }}/.bao-assets
+        DEPLOY_ENV: ${{ inputs.environment }}
 
     # ── Setup OpenTofu ─────────────────────────────────────────────────────
     - name: Setup OpenTofu

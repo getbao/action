@@ -2,6 +2,7 @@ import { configure, getConsoleSink, getLogger } from "@logtape/logtape";
 import { build } from "esbuild";
 
 const SCRIPTS = [
+	"validate-project",
 	"download-assets",
 	"generate-config",
 	"parse-secrets",
