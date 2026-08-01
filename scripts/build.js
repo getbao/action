@@ -3,6 +3,7 @@ import { build } from "esbuild";
 
 const SCRIPTS = [
 	"validate-project",
+	"resolve-release",
 	"download-assets",
 	"generate-config",
 	"parse-secrets",
