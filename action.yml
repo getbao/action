@@ -88,7 +88,7 @@ runs:
       env:
         BAO_API_KEY: ${{ inputs.license_key }}
         BAO_API_URL: ${{ inputs.api_url }}
-        VERSION: ${{ steps.resolve-release.outputs.resolved_version }}
+        VERSION: ${{ inputs.version }}
         ASSETS_DIR: ${{ github.workspace }}/.bao-assets
         DEPLOY_ENV: ${{ inputs.environment }}
 
