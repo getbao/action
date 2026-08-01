@@ -128,9 +128,9 @@ async function bootstrapSecrets(env, log) {
     FORCE_ROTATE: forceRotateStr
   } = env;
   const forceRotate = forceRotateStr === "true";
-  if (!accountId || !apiToken || !kvNamespaceId || !authWorkerName || !rotationWorkerName) {
+  if (!accountId || !apiToken || !kvNamespaceId || !authWorkerName) {
     throw new Error(
-      "Missing required environment variables: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, KV_NAMESPACE_ID, AUTH_WORKER_NAME, ROTATION_WORKER_NAME"
+      "Missing required environment variables: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, KV_NAMESPACE_ID, AUTH_WORKER_NAME"
     );
   }
   const cf = new CloudflareClient(accountId, apiToken);
@@ -158,12 +158,14 @@ async function bootstrapSecrets(env, log) {
     encKeyBase64
   );
   log(`${WORKER_ENCRYPTION_SECRET} set on ${authWorkerName}.`);
-  await cf.setWorkerSecret(
-    rotationWorkerName,
-    WORKER_ENCRYPTION_SECRET,
-    encKeyBase64
-  );
-  log(`${WORKER_ENCRYPTION_SECRET} set on ${rotationWorkerName}.`);
+  if (rotationWorkerName) {
+    await cf.setWorkerSecret(
+      rotationWorkerName,
+      WORKER_ENCRYPTION_SECRET,
+      encKeyBase64
+    );
+    log(`${WORKER_ENCRYPTION_SECRET} set on ${rotationWorkerName}.`);
+  }
   log("Bootstrap complete.");
 }
 

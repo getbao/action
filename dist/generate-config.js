@@ -15763,23 +15763,30 @@ async function main() {
     path: wranglerConfigPath,
     env: deployEnv
   });
-  const rotationWorkerName = `bao-${config2.appName}-rotation`;
-  const rotationTemplatePath = import_node_path.default.join(
-    assetsDir,
-    "wrangler-rotation.template.mustache"
-  );
-  const renderedRotation = renderTemplate(rotationTemplatePath, {
-    name: `${config2.appName}-rotation`,
-    entrypoint: rotationWorkerFileName,
-    env: deployEnv,
-    kvId
-  });
-  const rotationConfigPath = import_node_path.default.resolve(workDir, "wrangler-rotation.json");
-  import_node_fs3.default.writeFileSync(rotationConfigPath, renderedRotation);
-  logger2.info("wrangler-rotation.json written to {path} with env [{env}]", {
-    path: rotationConfigPath,
-    env: deployEnv
-  });
+  let rotationWorkerName = "";
+  if (import_node_fs3.default.existsSync(rotationWorkerFileName)) {
+    rotationWorkerName = `bao-${config2.appName}-rotation`;
+    const rotationTemplatePath = import_node_path.default.join(
+      assetsDir,
+      "wrangler-rotation.template.mustache"
+    );
+    const renderedRotation = renderTemplate(rotationTemplatePath, {
+      name: `${config2.appName}-rotation`,
+      entrypoint: rotationWorkerFileName,
+      env: deployEnv,
+      kvId
+    });
+    const rotationConfigPath = import_node_path.default.resolve(workDir, "wrangler-rotation.json");
+    import_node_fs3.default.writeFileSync(rotationConfigPath, renderedRotation);
+    logger2.info("wrangler-rotation.json written to {path} with env [{env}]", {
+      path: rotationConfigPath,
+      env: deployEnv
+    });
+  } else {
+    logger2.info(
+      "rotation-worker.js not present \u2014 skipping wrangler-rotation.json"
+    );
+  }
   setOutput("app_name", config2.appName);
   setOutput("rotation_worker_name", rotationWorkerName);
   setOutput("db_id", dbId);

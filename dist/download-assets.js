@@ -1447,23 +1447,6 @@ async function withRetry(fn, maxAttempts = 3, baseDelayMs = 500) {
 }
 
 // src/download-assets.ts
-var ASSETS = [
-  "manifest.json",
-  "worker.js",
-  "rotation-worker.js",
-  "migrations.zip",
-  "tf.zip"
-];
-var VERIFY_ASSETS = [
-  "worker.js",
-  "rotation-worker.js",
-  "migrations.zip",
-  "tf.zip"
-];
-var EXTRACT = [
-  ["migrations.zip", "migrations"],
-  ["tf.zip", "tf"]
-];
 var REQUIRED_VARS = [
   "BAO_API_KEY",
   "BAO_API_URL",
@@ -1499,42 +1482,46 @@ async function downloadAssets(env) {
   }
   const { value: oidcToken } = await oidcRes.json();
   await (0, import_promises.mkdir)(assetsDir, { recursive: true });
+  const releaseRes = await withRetry(async () => {
+    const res = await fetch(`${apiUrl}/v1/releases/${version}`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "X-OIDC-Token": oidcToken,
+        "X-Deploy-Env": deployEnv
+      },
+      signal: AbortSignal.timeout(3e4)
+    });
+    if (!res.ok) {
+      throw new Error(`API request failed: ${res.status}`);
+    }
+    return res.json();
+  });
+  const { version: resolvedVersion, assets } = releaseRes;
+  logger.info("Downloading {count} assets for {version}", {
+    count: assets.length,
+    version: resolvedVersion
+  });
   let workerManifestKey = "worker.js";
   await Promise.all(
-    ASSETS.map((asset) => {
-      logger.info("Downloading {asset}...", { asset });
+    assets.map((asset) => {
+      logger.info("Downloading {asset}...", { asset: asset.name });
       return withRetry(async () => {
-        const apiRes = await fetch(
-          `${apiUrl}/v1/releases/${version}/${asset}`,
-          {
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "X-OIDC-Token": oidcToken,
-              "X-Deploy-Env": deployEnv
-            },
-            signal: AbortSignal.timeout(3e4)
-          }
-        );
-        if (!apiRes.ok) {
-          throw new Error(`API request failed for ${asset}: ${apiRes.status}`);
-        }
-        const { url: presignedUrl, workerKey } = await apiRes.json();
-        if (asset === "worker.js" && workerKey) {
-          workerManifestKey = workerKey;
-        }
-        assertHttpsUrl(presignedUrl, "presigned URL");
-        const downloadRes = await fetch(presignedUrl, {
+        assertHttpsUrl(asset.url, "presigned URL");
+        const downloadRes = await fetch(asset.url, {
           signal: AbortSignal.timeout(6e4)
         });
         if (!downloadRes.ok) {
           throw new Error(
-            `Download failed for ${asset}: ${downloadRes.status}`
+            `Download failed for ${asset.name}: ${downloadRes.status}`
           );
         }
         await (0, import_promises.writeFile)(
-          (0, import_node_path.join)(assetsDir, asset),
+          (0, import_node_path.join)(assetsDir, asset.name),
           Buffer.from(await downloadRes.arrayBuffer())
         );
+        if (asset.name === "worker.js" && asset.workerKey) {
+          workerManifestKey = asset.workerKey;
+        }
       });
     })
   );
@@ -1546,17 +1533,18 @@ async function downloadAssets(env) {
   } catch (err) {
     throw new Error(`Failed to parse manifest.json: ${err.message}`);
   }
-  for (const asset of VERIFY_ASSETS) {
-    const content = await (0, import_promises.readFile)((0, import_node_path.join)(assetsDir, asset));
+  const verifyAssets = assets.filter((a) => a.name !== "manifest.json");
+  for (const asset of verifyAssets) {
+    const content = await (0, import_promises.readFile)((0, import_node_path.join)(assetsDir, asset.name));
     const actual = (0, import_node_crypto.createHash)("sha256").update(content).digest("hex");
-    const manifestKey = asset === "worker.js" ? workerManifestKey : asset;
+    const manifestKey = asset.name === "worker.js" ? workerManifestKey : asset.name;
     const expected = manifest.assets[manifestKey]?.sha256;
     if (actual !== expected) {
       throw new Error(
-        `Hash mismatch for ${asset}: expected ${expected}, got ${actual}`
+        `Hash mismatch for ${asset.name}: expected ${expected}, got ${actual}`
       );
     }
-    logger.info("  {asset} \u2713", { asset });
+    logger.info("  {asset} \u2713", { asset: asset.name });
   }
   const whichResult = (0, import_node_child_process.spawnSync)("which", ["unzip"]);
   if (whichResult.status !== 0) {
@@ -1564,17 +1552,19 @@ async function downloadAssets(env) {
       "unzip binary not found. Install it with: apt-get install unzip (Ubuntu) or brew install unzip (macOS)"
     );
   }
-  for (const [archive, subdir] of EXTRACT) {
-    logger.info("Extracting {archive}...", { archive });
+  const zipAssets = assets.filter((a) => a.name.endsWith(".zip"));
+  for (const asset of zipAssets) {
+    const subdir = asset.name.replace(".zip", "");
+    logger.info("Extracting {archive}...", { archive: asset.name });
     const result = (0, import_node_child_process.spawnSync)("unzip", [
       "-oq",
-      (0, import_node_path.join)(assetsDir, archive),
+      (0, import_node_path.join)(assetsDir, asset.name),
       "-d",
       (0, import_node_path.join)(assetsDir, subdir)
     ]);
     if (result.status !== 0) {
       throw new Error(
-        `Failed to extract ${archive}: ${result.stderr?.toString() ?? "unknown error"}`
+        `Failed to extract ${asset.name}: ${result.stderr?.toString() ?? "unknown error"}`
       );
     }
   }

@@ -62,13 +62,23 @@ runs:
         BAO_API_URL: ${{ inputs.api_url }}
         DEPLOY_ENV: ${{ inputs.environment }}
 
+    # ── Resolve release version ────────────────────────────────────────────
+    - name: Resolve release
+      id: resolve-release
+      shell: bash
+      run: node "${{ github.action_path }}/dist/resolve-release.js"
+      env:
+        BAO_API_KEY: ${{ inputs.license_key }}
+        BAO_API_URL: ${{ inputs.api_url }}
+        VERSION: ${{ inputs.version }}
+
     # ── Restore asset cache ────────────────────────────────────────────────
     - name: Restore asset cache
       id: asset-cache
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.bao-assets
-        key: bao-assets-${{ inputs.version }}
+        key: bao-assets-${{ steps.resolve-release.outputs.resolved_version }}
 
     # ── Download release assets (cache miss only) ──────────────────────────
     - name: Download release assets
@@ -78,7 +88,7 @@ runs:
       env:
         BAO_API_KEY: ${{ inputs.license_key }}
         BAO_API_URL: ${{ inputs.api_url }}
-        VERSION: ${{ inputs.version }}
+        VERSION: ${{ steps.resolve-release.outputs.resolved_version }}
         ASSETS_DIR: ${{ github.workspace }}/.bao-assets
         DEPLOY_ENV: ${{ inputs.environment }}
 
@@ -194,6 +204,7 @@ runs:
     # ── Deploy Rotation Worker ────────────────────────────────────────────
     - name: Deploy Rotation Worker
       id: deploy-rotation
+      if: steps.resolve-release.outputs.has_rotation_worker == 'true'
       uses: cloudflare/wrangler-action@v3
       with:
         apiToken: ${{ inputs.api_token }}
