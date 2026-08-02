@@ -35,6 +35,10 @@ inputs:
   github_token:
     description: "GitHub API Token to submit Pull Request"
     required: true
+  force_download:
+    description: "Skip the asset cache and re-download release assets from the API"
+    required: false
+    default: "false"
 
 outputs:
   pr_url:
@@ -47,6 +51,14 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # ── Action version ─────────────────────────────────────────────────────
+    - name: Print action version
+      shell: bash
+      run: |
+        echo "action ref:    ${{ github.action_ref }}"
+        echo "action sha:    $(git -C "$GITHUB_ACTION_PATH" rev-parse HEAD)"
+        echo "action path:   $GITHUB_ACTION_PATH"
+
     # ── Setup Node.js ──────────────────────────────────────────────────────
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -75,10 +87,22 @@ runs:
     # ── Restore asset cache ────────────────────────────────────────────────
     - name: Restore asset cache
       id: asset-cache
+      if: inputs.force_download != 'true'
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.bao-assets
         key: bao-assets-${{ steps.resolve-release.outputs.resolved_version }}
+
+    - name: Log asset source
+      shell: bash
+      run: |
+        if [ "${{ inputs.force_download }}" = "true" ]; then
+          echo "assets: force_download=true — skipping cache, downloading from API"
+        elif [ "${{ steps.asset-cache.outputs.cache-hit }}" = "true" ]; then
+          echo "assets: cache hit (bao-assets-${{ steps.resolve-release.outputs.resolved_version }})"
+        else
+          echo "assets: cache miss — downloading from API"
+        fi
 
     # ── Download release assets (cache miss only) ──────────────────────────
     - name: Download release assets

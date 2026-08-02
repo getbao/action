@@ -1481,12 +1481,22 @@ async function resolveRelease(env) {
   } = env;
   assertHttpsUrl(apiUrl, "BAO_API_URL");
   const body = await withRetry(async () => {
-    const res = await fetch(`${apiUrl}/v1/releases/${version}`, {
+    const url = `${apiUrl}/v1/releases/${version}`;
+    logger2.info("GET {url}", { url });
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
       signal: AbortSignal.timeout(3e4)
     });
     if (!res.ok) {
-      throw new Error(`Failed to resolve release ${version}: ${res.status}`);
+      const text = await res.text();
+      logger2.error("GET {url} \u2192 {status}: {body}", {
+        url,
+        status: res.status,
+        body: text
+      });
+      throw new Error(
+        `Failed to resolve release ${version}: ${res.status} ${text}`
+      );
     }
     return res.json();
   });
@@ -1497,6 +1507,9 @@ async function resolveRelease(env) {
     version,
     resolved: body.version,
     has: hasRotationWorker
+  });
+  logger2.info("Assets: {assets}", {
+    assets: body.assets.map((a) => a.name).join(", ")
   });
   setOutput("resolved_version", body.version);
   setOutput("has_rotation_worker", String(hasRotationWorker));
