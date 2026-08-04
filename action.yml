@@ -247,7 +247,7 @@ runs:
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
         CLOUDFLARE_API_TOKEN: ${{ inputs.api_token }}
         KV_NAMESPACE_ID: ${{ steps.tofu-outputs.outputs.kv_id }}
-        AUTH_WORKER_NAME: ${{ steps.gen-config.outputs.app_name }}-${{ inputs.environment }}
+        AUTH_WORKER_NAME: bao-${{ steps.gen-config.outputs.app_name }}-${{ inputs.environment }}
         ROTATION_WORKER_NAME: ${{ steps.gen-config.outputs.rotation_worker_name }}-${{ inputs.environment }}
         FORCE_ROTATE: ${{ inputs.force_rotate }}
 
