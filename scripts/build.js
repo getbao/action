@@ -1,3 +1,4 @@
+import { writeFileSync } from "node:fs";
 import { configure, getConsoleSink, getLogger } from "@logtape/logtape";
 import { build } from "esbuild";
 
@@ -48,5 +49,6 @@ for (const result of results) {
 	}
 }
 
+writeFileSync("dist/package.json", JSON.stringify({ type: "commonjs" }));
 logger.info("Done in {ms}ms", { ms: Date.now() - start });
 if (failed) process.exit(1);

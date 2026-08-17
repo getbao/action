@@ -1,0 +1,80 @@
+name: act integration test
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Entitlement scenario (community | pro | pro-hardened)"
+        required: false
+        default: "pro-hardened"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+      BAO_API_KEY: test-key
+      BAO_API_URL: https://localhost:3000
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: mock-runner-token
+      ACTIONS_ID_TOKEN_REQUEST_URL: https://localhost:3000/oidc/token
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build deployer
+        run: node scripts/build.js
+        working-directory: deployer
+
+      - name: Start mock BAO Hub
+        run: |
+          node --experimental-strip-types mock/hub.ts &
+          echo $! > /tmp/mock-hub.pid
+          # wait until listening
+          for i in $(seq 1 10); do
+            curl -sk https://localhost:3000/oidc/token >/dev/null && break
+            sleep 1
+          done
+        working-directory: deployer
+
+      # ── resolve-release: sets has_rotation_worker output ─────────────────
+      - name: Resolve release
+        id: resolve-release
+        shell: bash
+        run: node "${{ github.action_path }}/dist/resolve-release.js"
+        env:
+          VERSION: ${{ inputs.scenario || 'pro-hardened' }}
+
+      - name: Log entitlement outputs
+        run: |
+          echo "resolved_version: ${{ steps.resolve-release.outputs.resolved_version }}"
+          echo "has_rotation_worker: ${{ steps.resolve-release.outputs.has_rotation_worker }}"
+
+      # ── assert: rotation worker step respects entitlement ─────────────────
+      - name: Deploy Rotation Worker (entitled only)
+        id: deploy-rotation
+        if: steps.resolve-release.outputs.has_rotation_worker == 'true'
+        run: echo "rotation worker would deploy here"
+
+      - name: Assert rotation worker ran for hardened scenario
+        if: ${{ inputs.scenario == 'pro-hardened' || inputs.scenario == '' }}
+        run: |
+          if [ "${{ steps.deploy-rotation.conclusion }}" != "success" ]; then
+            echo "FAIL: rotation worker step should have run for pro-hardened"
+            exit 1
+          fi
+
+      - name: Assert rotation worker skipped for community
+        if: ${{ inputs.scenario == 'community' }}
+        run: |
+          if [ "${{ steps.deploy-rotation.conclusion }}" != "skipped" ]; then
+            echo "FAIL: rotation worker step should be skipped for community"
+            exit 1
+          fi
+
+      - name: Stop mock BAO Hub
+        if: always()
+        run: kill $(cat /tmp/mock-hub.pid) 2>/dev/null || true
