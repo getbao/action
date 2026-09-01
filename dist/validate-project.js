@@ -1516,6 +1516,11 @@ async function validateProject(env) {
         if (body.message) message = body.message;
       } catch {
       }
+      if (res.status === 401) {
+        message += " \u2014 'license_key' was rejected; check it is a valid, active getbao license key.";
+      } else if (res.status === 403) {
+        message += " \u2014 the license key does not have access to this project or environment.";
+      }
       throw new Error(message);
     }
   });

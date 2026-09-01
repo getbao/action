@@ -48,6 +48,23 @@ async function withRetry(fn, maxAttempts = 3, baseDelayMs = 500) {
 
 // src/lib/cloudflare-client.ts
 var TIMEOUT_MS = 3e4;
+async function cfErrorMessage(res, action) {
+  let detail = "";
+  try {
+    const body = await res.json();
+    if (body.errors?.length) {
+      detail = ` \u2014 ${body.errors.map((e) => e.message).join("; ")}`;
+    }
+  } catch {
+  }
+  let hint = "";
+  if (res.status === 401) {
+    hint = " (check that 'api_token' is valid and has not expired)";
+  } else if (res.status === 403) {
+    hint = " (check that 'api_token' has the required permissions and 'account_id' is correct)";
+  }
+  return `${action} failed: ${res.status}${detail}${hint}`;
+}
 var CloudflareClient = class {
   constructor(accountId, apiToken) {
     this.accountId = accountId;
@@ -64,7 +81,7 @@ var CloudflareClient = class {
         signal: AbortSignal.timeout(TIMEOUT_MS)
       });
       if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`KV GET failed: ${res.status}`);
+      if (!res.ok) throw new Error(await cfErrorMessage(res, "KV GET"));
       return res.text();
     });
   }
@@ -77,7 +94,7 @@ var CloudflareClient = class {
         body: value,
         signal: AbortSignal.timeout(TIMEOUT_MS)
       });
-      if (!res.ok) throw new Error(`KV PUT failed: ${res.status}`);
+      if (!res.ok) throw new Error(await cfErrorMessage(res, "KV PUT"));
     });
   }
   async setWorkerSecret(workerName, name, value) {
@@ -90,7 +107,9 @@ var CloudflareClient = class {
         signal: AbortSignal.timeout(TIMEOUT_MS)
       });
       if (!res.ok)
-        throw new Error(`Set secret on ${workerName} failed: ${res.status}`);
+        throw new Error(
+          await cfErrorMessage(res, `Set secret on ${workerName}`)
+        );
     });
   }
 };

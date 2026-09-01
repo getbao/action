@@ -59,6 +59,20 @@ runs:
         echo "action sha:    $(git -C "$GITHUB_ACTION_PATH" rev-parse HEAD)"
         echo "action path:   $GITHUB_ACTION_PATH"
 
+    # ── Refuse to deploy if a prior state PR is still unmerged ─────────────
+    - name: Check for pending state PR
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        branch="bao/update-state-${{ inputs.environment }}"
+        pending=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')
+        if [ -n "$pending" ]; then
+          echo "::error::A previous OpenTofu state update for '${{ inputs.environment }}' is still unmerged: $pending"
+          echo "Merging it is required before deploying again, otherwise this run's state will be based on stale data and can create duplicate cloud resources."
+          exit 1
+        fi
+
     # ── Setup Node.js ──────────────────────────────────────────────────────
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -121,20 +135,6 @@ runs:
       uses: opentofu/setup-opentofu@v1
       with:
         tofu_wrapper: false
-
-    # ── Refuse to deploy if a prior state PR is still unmerged ─────────────
-    - name: Check for pending state PR
-      shell: bash
-      env:
-        GH_TOKEN: ${{ inputs.github_token }}
-      run: |
-        branch="bao/update-state-${{ inputs.environment }}"
-        pending=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')
-        if [ -n "$pending" ]; then
-          echo "::error::A previous OpenTofu state update for '${{ inputs.environment }}' is still unmerged: $pending"
-          echo "Merging it is required before deploying again, otherwise this run's state will be based on stale data and can create duplicate cloud resources."
-          exit 1
-        fi
 
     # ── Ensure state directory exists ──────────────────────────────────────
     - name: Prepare state directory

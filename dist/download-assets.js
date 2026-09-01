@@ -1492,7 +1492,12 @@ async function downloadAssets(env) {
       signal: AbortSignal.timeout(3e4)
     });
     if (!res.ok) {
-      throw new Error(`API request failed: ${res.status}`);
+      const text = await res.text();
+      let message = `API request failed: ${res.status} ${text}`;
+      if (res.status === 401) {
+        message += " \u2014 check that 'license_key' is a valid, active getbao license key.";
+      }
+      throw new Error(message);
     }
     return res.json();
   });
@@ -1511,9 +1516,11 @@ async function downloadAssets(env) {
           signal: AbortSignal.timeout(6e4)
         });
         if (!downloadRes.ok) {
-          throw new Error(
-            `Download failed for ${asset.name}: ${downloadRes.status}`
-          );
+          let message = `Download failed for ${asset.name}: ${downloadRes.status}`;
+          if (downloadRes.status === 403) {
+            message += " \u2014 the presigned URL likely expired; re-run the workflow to fetch a fresh one.";
+          }
+          throw new Error(message);
         }
         await (0, import_promises.writeFile)(
           (0, import_node_path.join)(assetsDir, asset.name),
